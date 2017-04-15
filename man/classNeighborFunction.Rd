@@ -63,10 +63,6 @@ likewise the \code{\link{relationalClassFunction}}, and to select class objects 
      \emph{ID} field must be contained of unique numbers
 }
 }
-\examples{
-classNeighborFunction()
-
-}
 \keyword{analysis}
 \keyword{class}
 \keyword{image}

@@ -33,10 +33,6 @@ This function grows neighbor \linkS4class{SpatialPolygonsDataFrame} objects toge
   \item \linkS4class{SpatialPolygonsDataFrame} input must have an \emph{ID} field with unique numbers
 }
 }
-\examples{
-neighborGrowing()
-
-}
 \keyword{analysis}
 \keyword{growing,}
 \keyword{image}

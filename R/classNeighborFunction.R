@@ -42,8 +42,6 @@
 #'
 #' @keywords relation of class objects to their neighbor objects, spdep, object-oriented image analysis
 #'
-#' @examples
-#'classNeighborFunction()
 #'
 #' @export
 #'

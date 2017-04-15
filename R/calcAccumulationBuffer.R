@@ -4,7 +4,7 @@
 #' @param in.grid path of input grid (flow accumulation)
 #' @param out.grid path of output grid
 #' @param out.shp creation of an output shapefile. Default: NULL
-#' @param return.sf return of simple feature (\linkS4class{sf}). Default: FALSE
+#' @param return.sf return of simple feature. Default: FALSE
 #' @param t vector containing thresholds for flow accumulation grid
 #' @param buf.dist vector containing the buffer distances
 #' @param working.path working path. Default: NULL
@@ -21,8 +21,6 @@
 #'
 #' @keywords flow accumulation, buffer
 #'
-#' @examples
-#' calcAccumulationBuffer()
 #'
 #' @export
 calcAccumulationBuffer <- function(in.grid, out.grid, out.shp = NULL, return.sf = FALSE, t, buf.dist, working.path = NULL, keep.intermediate = FALSE, noData = -99999, show.output.on.console = FALSE, quiet = TRUE)

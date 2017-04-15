@@ -21,8 +21,6 @@
 #'
 #' @keywords neighbor growing, spdep, object-oriented image analysis
 #'
-#' @examples
-#' neighborGrowing()
 #'
 #' @export
 neighborGrowing <- function(spdf, nb, ID.start = NULL, ID.class = NULL, return.input = TRUE, return.gUnaryUnionNeighbors = TRUE, quiet = TRUE)

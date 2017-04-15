@@ -23,10 +23,6 @@ This function calculates object features based on the \code{\link[EBImage]{compu
   \item see \code{\link[EBImage]{computeFeatures}}
 }
 }
-\examples{
-objectFeatures()
-
-}
 \keyword{EBImage,}
 \keyword{computeFeatures,}
 \keyword{segmentation}

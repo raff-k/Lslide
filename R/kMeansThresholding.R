@@ -20,8 +20,6 @@
 #'
 #' @keywords k-Means thresholding, k-Means clustering, Schwarz Bayesian criterio
 #'
-#' @examples
-#' kMeansThresholding()
 #'
 #' @export
 kMeansThresholding <- function(df, n.clust = NULL, G = 25, size.data = NULL, size.sample = 5000, seed = 123, iter.max = 5000)

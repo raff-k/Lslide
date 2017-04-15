@@ -20,10 +20,6 @@ to erroneous attribute tables in desktop GIS software.
   \item see \href{http://stackoverflow.com/questions/7235657/fastest-way-to-replace-nas-in-a-large-data-table}{Fastest way to replace NAs in a large data.table} \emph{(last call: 13-04-2017)}
 }
 }
-\examples{
-replaceInvalids()
-
-}
 \keyword{NA,}
 \keyword{NAN,}
 \keyword{NULL,}

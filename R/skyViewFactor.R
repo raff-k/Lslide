@@ -17,8 +17,6 @@
 #'
 #' @keywords sky-view factor
 #'
-#' @examples
-#' skyViewFactor()
 #'
 #' @export
 skyViewFactor <- function(path.software, path.input, options_overwrite = 1, options_exaggeration_factor = 1.0,

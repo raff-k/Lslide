@@ -13,8 +13,6 @@
 #'
 #' @keywords data.frame, data.table, NA, NAN, NULL, replace
 #'
-#' @examples
-#' replaceInvalids()
 #'
 #' @export
 replaceInvalids <- function(x, replace.value = -9999)

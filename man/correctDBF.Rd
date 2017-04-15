@@ -23,10 +23,6 @@ ESRI-shapefile format. By this function, "corrupt" headers can be replaced.
 \note{
 length of vector with new names must be identical to number of adjusted columns
 }
-\examples{
-correctDBF()
-
-}
 \keyword{correct}
 \keyword{dbf}
 \keyword{dbf,}

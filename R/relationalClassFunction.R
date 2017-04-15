@@ -51,8 +51,6 @@
 #'
 #' @keywords relation of objects to a class, spdep, object-oriented image analysis
 #'
-#' @examples
-#'relationalClassFunction()
 #'
 #' @export
 #'

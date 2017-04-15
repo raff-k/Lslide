@@ -24,10 +24,6 @@ repaired \linkS4class{SpatialPolygonsDataFrame}
 \description{
 This function checks the geometry of a \linkS4class{SpatialPolygonsDataFrame} input. Invalid geometries are repaired by the \code{\link[cleangeo]{clgeo_Clean}} function.
 }
-\examples{
-checkGeometry()
-
-}
 \keyword{cleangeo}
 \keyword{geometry,}
 \keyword{invalid}

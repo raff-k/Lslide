@@ -34,10 +34,6 @@ This function calculates thresholds by using k-Means clustering. The number of c
   \item see \href{https://stat.ethz.ch/R-manual/R-devel/library/stats/html/kmeans.html}{kmeans} \emph{(last call: 13-04-2017)}
 }
 }
-\examples{
-kMeansThresholding()
-
-}
 \keyword{Bayesian}
 \keyword{Schwarz}
 \keyword{clustering,}

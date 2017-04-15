@@ -40,10 +40,6 @@ This function buffers a flow accumulation input in dependence on given thesholds
 \note{
 length of \emph{t} and \emph{buf.dist} must be identical
 }
-\examples{
-calcAccumulationBuffer()
-
-}
 \keyword{accumulation,}
 \keyword{buffer}
 \keyword{flow}

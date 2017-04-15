@@ -14,8 +14,6 @@
 #'
 #' @keywords dbf, correct dbf
 #'
-#' @examples
-#' correctDBF()
 #'
 #' @export
 correctDBF <- function(x, end.n = length(colnames(d$dbf)), adjust.n = 0, new.colnames)

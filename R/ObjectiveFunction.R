@@ -37,8 +37,6 @@
 #'
 #' @keywords objective function, USPO
 #'
-#' @examples
-#' Objective.Function()
 #'
 #' @export
 Objective.Function <- function(Scale.Input.Grid, Scale.Input.Grid.Cell.Size = "1", Scale.Statistic.Min.Size = "0", Objective.Function.save = FALSE, Objective.Function.save.path = NULL, Count = "1", Min = "0", Max = "0", Range = "0", Sum = "0", Mean = "1", Var = "1", Stddev = "0", Objective.Function.save.name = "",

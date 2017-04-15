@@ -24,8 +24,6 @@
 #' @keywords length-width-ratio, principal component analysis
 #'
 #'
-#' @examples
-#' lengthWidthRatio()
 #'
 #'
 #' @export

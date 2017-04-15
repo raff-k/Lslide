@@ -46,11 +46,6 @@ NORTH 0°, EAST 90°, SOUTH 180°, WEST 270°.
  \item Angles will be transformed to clockwise sense: NORTH 0°, EAST 90°, SOUTH 180°, WEST 270°.
  }
 }
-\examples{
-getBoundingBox()
-
-
-}
 \keyword{bounding}
 \keyword{box,}
 \keyword{direction}

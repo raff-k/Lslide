@@ -25,8 +25,6 @@
 #'
 #' @keywords object orientation, main direction, principal component analysis
 #'
-#' @examples
-#' mainDirection()
 #'
 #' @export
 mainDirection <- function(spdf, angle = "main", quiet = TRUE)

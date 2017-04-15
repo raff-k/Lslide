@@ -73,10 +73,6 @@ segmented images.
          - International Journal of Remote Sensing 27, 14, 3035-3040.
 }
 }
-\examples{
-Objective.Function()
-
-}
 \keyword{USPO}
 \keyword{function,}
 \keyword{objective}

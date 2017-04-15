@@ -30,10 +30,6 @@ in xy-space. For this, a principal component analysis is performed according to 
         to object orientation. Geo-spatial Information Science, 3(3), 76-78.
 }
 }
-\examples{
-mainDirection()
-
-}
 \keyword{analysis}
 \keyword{component}
 \keyword{direction,}

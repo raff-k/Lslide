@@ -38,8 +38,6 @@
 #'
 #' @keywords relation of objects, spdep, object-oriented image analysis
 #'
-#' @examples
-#' relationalObjectFunction()
 #'
 #' @export
 #'

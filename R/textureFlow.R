@@ -33,8 +33,6 @@
 #'
 #' @keywords textural features, GRASS GIS, texture in flow direction
 #'
-#' @examples
-#' textureFlow()
 #'
 #' @export
 textureFlow <- function(grass.texture.flowDir, grass.texture.input, saga.texture.shape = NULL, saga.texture.statistic = NULL, grass.texture.window = 3, quiet = TRUE, show.output.on.console = FALSE,

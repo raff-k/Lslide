@@ -33,8 +33,6 @@
 #'
 #' @keywords ESP, USPO
 #'
-#' @examples
-#' Objective.Function()
 #'
 #' @export
 ESP <- function(Scale.Input.Grid, Scale.Input.Grid.Cell.Size = "1", Scale.Statistic.Min.Size  = "0", ESP.save = FALSE, ESP.save.path = NULL, Count = "1", Min = "0", Max = "0", Range = "0", Sum = "0", Mean = "0",

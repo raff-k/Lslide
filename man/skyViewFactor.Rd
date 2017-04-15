@@ -33,9 +33,5 @@ stand-alone Relief Visualization Toolbox of ZAKSEK et al. (2011).
   \item ZAKSEK, K., K. OSTIR & Z. KOKALJ (2011): Sky-View Factor as a Relief Visualization Technique. - Remote Sensing 3, 12, 398-415.
 }
 }
-\examples{
-skyViewFactor()
-
-}
 \keyword{factor}
 \keyword{sky-view}

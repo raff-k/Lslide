@@ -65,8 +65,6 @@
 #'
 #' @keywords segmentation, region growing, superpixels Simple Linear Iterative Clustering
 #'
-#' @examples
-#' segmentation()
 #'
 #' @export
 segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Output.Grid = paste0( segmentation.tmp.path, "SagaRepresentativenessOutputGrid.sgrd"), Saga.Output.Lod =  paste0( segmentation.tmp.path, "SagaRepresentativenessOutputLod.sgrd"),

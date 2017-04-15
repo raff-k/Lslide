@@ -46,10 +46,6 @@ This function calculates statistics of \linkS4class{SpatialPolygonsDataFrame} ob
   \item ECOGNITION DEVELOPER (2014) Reference Book. Trimble Documentation, München, Germany
 }
 }
-\examples{
-relationalObjectFunction()
-
-}
 \keyword{analysis}
 \keyword{image}
 \keyword{object-oriented}

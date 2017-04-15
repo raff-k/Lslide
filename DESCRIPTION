@@ -1,12 +1,31 @@
 Package: Lslide
-Type: Package
-Title: What the Package Does (Title Case)
+Title: Functions for object-oriented image analysis in landslide science
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Date: 2017-04-17
+Authors@R: c(person("Knevels", "Raphael", email = "lslidepackage@gmail.com", role = "cre"))
+Author: Raphael Knevels
+Maintainer: Raphael Knevels <lslidepackage@gmail.com>
+Description: This package was created with respect to the authors master thesis. 
+             The implemented functions supports the object-oriented and automated detection of landslides in high-resoultion DTM data. 
+Imports: cleangeo (>= 0.2.1),
+         data.table (>= 1.10.0),
+         EBImage (>= 4.16.0),
+         foreign (>= 0.8.67),
+         maptools (>= 0.8.40),
+         mclust (>= 5.2.2),
+         raster (>= 2.5.8),
+         rgdal (>= 1.2.4),
+         rgeos (>= 0.3.21),
+         rgrass7 (>= 0.1.9),
+         RSAGA (>= 0.94.5),
+         shapefiles (>= 0.7),
+         sf (>= 0.3.4),
+         sp (>= 1.2.3),
+         spdep (>= 0.6.8),
+         tools (>= 3.3.2)
+Depends: R (>= 3.3.2)
+Suggests: ggplot2
+Enhances: spdep
+License: GPL (>= 2)
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 6.0.1

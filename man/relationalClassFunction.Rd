@@ -77,10 +77,6 @@ Moreover, the function is also capable to compute statistics on angle inputs by 
      \emph{ID} field must be contained of unique numbers
 }
 }
-\examples{
-relationalClassFunction()
-
-}
 \keyword{a}
 \keyword{analysis}
 \keyword{class,}

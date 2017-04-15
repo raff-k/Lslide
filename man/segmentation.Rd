@@ -151,10 +151,6 @@ the new SLIC algorithm.\cr \cr
 Moreover, there is the option to compute a generalisation of
 segments by (multiple) majority filter (SAGA GIS) at the end.
 }
-\examples{
-segmentation()
-
-}
 \keyword{Clustering}
 \keyword{Iterative}
 \keyword{Linear}

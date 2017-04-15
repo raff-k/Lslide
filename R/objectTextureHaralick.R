@@ -28,8 +28,6 @@
 #'
 #' @keywords EBImage, computeFeatures.haralick, object-based textural features
 #'
-#' @examples
-#' objectTextureHaralick()
 #'
 #' @export
 objectTextureHaralick <- function(r.texture, r.seg, texture.haralick.nbins = 32, texture.haralick.scales = c(1,2), NA.val.in = 0, quiet = TRUE)

@@ -18,8 +18,6 @@
 #'
 #' @keywords EBImage, computeFeatures, segmentation
 #'
-#' @examples
-#' objectFeatures()
 #'
 #' @export
 objectFeatures <- function(r.seg, quiet = TRUE)

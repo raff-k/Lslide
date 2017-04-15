@@ -61,10 +61,6 @@ This function calculates textural features in flow direction according to STUMPF
   \item STUMPF, A. & N. KERLE (2011): Object-oriented mapping of landslides using Random Forests. - Remote Sensing of Environment 115, 10, 2564-2577
 }
 }
-\examples{
-textureFlow()
-
-}
 \keyword{GIS,}
 \keyword{GRASS}
 \keyword{direction}

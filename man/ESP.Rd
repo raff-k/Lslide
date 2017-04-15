@@ -58,9 +58,5 @@ and then by comparing the results of different segmentation levels (ROC-LV).
     Science 24, 6, 859-871.
 }
 }
-\examples{
-Objective.Function()
-
-}
 \keyword{ESP,}
 \keyword{USPO}

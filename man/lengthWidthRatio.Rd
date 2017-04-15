@@ -26,11 +26,6 @@ The length-width vectors for the ratio are computed by a principal component ana
         to object orientation. Geo-spatial Information Science, 3(3), 76-78.
 }
 }
-\examples{
-lengthWidthRatio()
-
-
-}
 \keyword{analysis}
 \keyword{component}
 \keyword{length-width-ratio,}

@@ -14,8 +14,6 @@
 #'
 #' @keywords invalid geometry, rgeos, cleangeo
 #'
-#' @examples
-#' checkGeometry()
 #'
 #' @export
 checkGeometry <- function(spdf, bug.correct.rgeos = TRUE, bug.simpl.tol = 0.00001, bug.buf.width = 0, quiet = TRUE)

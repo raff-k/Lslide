@@ -38,10 +38,6 @@ The calculation is based on the \code{\link[EBImage]{computeFeatures.haralick}} 
   \item see \href{http://earlglynn.github.io/RNotes/package/EBImage/Haralick-Textural-Features.html}{here} for more details on Haralick textural features \emph{(last call: 13-04-2017)}
 }
 }
-\examples{
-objectTextureHaralick()
-
-}
 \keyword{EBImage,}
 \keyword{computeFeatures.haralick,}
 \keyword{features}
