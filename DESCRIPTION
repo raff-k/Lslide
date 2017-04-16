@@ -7,7 +7,8 @@ Author: Raphael Knevels
 Maintainer: Raphael Knevels <lslidepackage@gmail.com>
 Description: This package was created with respect to the authors master thesis. 
              The implemented functions supports the object-oriented and automated detection of landslides in high-resoultion DTM data. 
-Imports: cleangeo (>= 0.2.1),
+Imports: 
+         cleangeo (>= 0.2.1),
          data.table (>= 1.10.0),
          foreign (>= 0.8.67),
          maptools (>= 0.8.40),
@@ -22,10 +23,15 @@ Imports: cleangeo (>= 0.2.1),
          sp (>= 1.2.3),
          spdep (>= 0.6.8),
          tools (>= 3.3.2)
-biocViews: Infrastructure, EBImage (>= 4.16.0)
-Depends: R (>= 3.3.2)
-Suggests: ggplot2
-Enhances: spdep
+Depends: 
+         R (>= 3.3.2)
+Suggests: 
+          ggplot2,
+          spdep,
+          BiocInstaller,
+          EBImage
+Remotes:
+          Bioconductor-mirror/EBImage
 License: GPL (>= 2)
 Encoding: UTF-8
 RoxygenNote: 6.0.1
