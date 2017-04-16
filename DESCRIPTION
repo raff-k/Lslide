@@ -22,7 +22,7 @@ Imports: cleangeo (>= 0.2.1),
          sp (>= 1.2.3),
          spdep (>= 0.6.8),
          tools (>= 3.3.2)
-biocViews: EBImage (>= 4.16.0)
+biocViews: EBImage (>= 4.16.0), BiocInstaller
 Depends: R (>= 3.3.2)
 Suggests: ggplot2
 Enhances: spdep
