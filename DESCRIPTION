@@ -29,6 +29,7 @@ Suggests:
           ggplot2,
           spdep
 Remotes:
+          Bioconductor-mirror/BiocInstaller,
           aoles/EBImage
 License: GPL (>= 2)
 Encoding: UTF-8
