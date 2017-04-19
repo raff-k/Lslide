@@ -30,7 +30,7 @@ Suggests:
           spdep
 Remotes:
           Bioconductor-mirror/BiocInstaller,
-          aoles/EBImage
+          Bioconductor-mirror/EBImage
 License: GPL (>= 2)
 Encoding: UTF-8
 RoxygenNote: 6.0.1
