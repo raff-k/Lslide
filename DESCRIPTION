@@ -28,7 +28,6 @@ Depends:
 Suggests: 
           ggplot2,
           spdep,
-          BiocInstaller,
           EBImage
 Remotes:
           Bioconductor-mirror/EBImage
