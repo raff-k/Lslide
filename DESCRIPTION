@@ -27,8 +27,7 @@ Depends:
          R (>= 3.3.2)
 Suggests: 
           ggplot2,
-          spdep,
-          EBImage
+          spdep
 Remotes:
           Bioconductor-mirror/EBImage
 License: GPL (>= 2)
