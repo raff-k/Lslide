@@ -1,0 +1,11 @@
+citHeader("To cite package Lslide in publications use:")
+
+citEntry(entry="mastersthesis",
+  author       = "Knevels Raphael",
+  title        = "Automatic landslide detection using high-resolution LiDAR DTM data. An object-oriented approach with open-source software in Burgenland, Austria.",
+  school      = "Friedrich Schiller University Jena, Department of Geography, GIScience group",
+  year         = 2017,
+  url          = "https://github.com/raff-k/Lslide-thesis/raw/master/Knevels2017_AutomaticLandslideDetection_Thesis.pdf",
+  textVersion = 
+  paste("Knevels, R., 2017.", "Automatic landslide detection using high-resolution LiDAR DTM data. An object-oriented approach with open-source software in Burgenland, Austria. Master's thesis, Friedrich Schiller University Jena.")
+)
