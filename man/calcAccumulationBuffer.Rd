@@ -15,7 +15,7 @@ calcAccumulationBuffer(in.grid, out.grid, out.shp = NULL, return.sf = FALSE,
 
 \item{out.shp}{creation of an output shapefile. Default: NULL}
 
-\item{return.sf}{return of simple feature (\linkS4class{sf}). Default: FALSE}
+\item{return.sf}{return of simple feature. Default: FALSE}
 
 \item{t}{vector containing thresholds for flow accumulation grid}
 
