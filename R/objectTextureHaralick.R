@@ -37,31 +37,31 @@ objectTextureHaralick <- function(r.texture, r.seg, texture.haralick.nbins = 32,
   process.time.start <- proc.time()
 
   # # # read data
-
   ## creation of gray scale image
+  r.texture <- convR2GSM(r = r.texture, NA.val.in = NA.val.in)
 
-  # replace NA
-  # r.texture[is.na(r.texture)] <- NA.value
-  funReplace <- function(..., NA.val.in){ifelse(is.na(...), NA.val.in, ...)}
-  r.texture <-  raster::calc(r.texture, function(x){funReplace(x, NA.val.in = NA.val.in)})
-
-
-  # stretching to 0-255 range
-  minV <- minValue(r.texture)
-  maxV <- maxValue(r.texture)
-
-  # the linear normalization
-  # scale function
-  funScale <- function(..., min, max){(... -min)*255/(max-min)+0}
-
-  # scale grid
-  r.texture <- raster::calc(r.texture, function(x){funScale(x, min = minV, max = maxV)})
-
-  # dividing by 255 to fit haralick input
-  r.texture <- raster::calc(r.texture, fun=function(x){return(x/255)})
-
-  # convert to matrix
-  r.texture <- as.matrix(r.texture)
+  # # replace NA
+  # # r.texture[is.na(r.texture)] <- NA.value
+  # funReplace <- function(..., NA.val.in){ifelse(is.na(...), NA.val.in, ...)}
+  # r.texture <-  raster::calc(r.texture, function(x){funReplace(x, NA.val.in = NA.val.in)})
+  #
+  #
+  # # stretching to 0-255 range
+  # minV <- minValue(r.texture)
+  # maxV <- maxValue(r.texture)
+  #
+  # # the linear normalization
+  # # scale function
+  # funScale <- function(..., min, max){(... -min)*255/(max-min)+0}
+  #
+  # # scale grid
+  # r.texture <- raster::calc(r.texture, function(x){funScale(x, min = minV, max = maxV)})
+  #
+  # # dividing by 255 to fit haralick input
+  # r.texture <- raster::calc(r.texture, fun=function(x){return(x/255)})
+  #
+  # # convert to matrix
+  # r.texture <- as.matrix(r.texture)
 
 
   ## creation of segments or objects input
