@@ -48,7 +48,7 @@
 #' @param Grass.Segmentation.Method type of GRASS Segmentation. Default: "region_growing"
 #' @param Grass.Segmentation.Similarity distance measurement of similarity. Default: "euclidean"
 #' @param Grass.Segmentation.Minsize minsize of segment. Default: 15
-#' @param Grass.Segmentation.Memor memory to be used for segmentation. Default: 300
+#' @param Grass.Segmentation.Memory memory to be used for segmentation. Default: 300
 #' @param Grass.Segmentation.Iterations amount of allowed iterations. Default: 50
 #' @param Grass.Segmentation.Seeds input of seeds raster. Enables bottom-up segmentation. Default: NULL
 #' @param Segmentation.Boundary.Grid input of boundary raster. Enables top-down (or hierarchical) segmentation. Default: NULL
