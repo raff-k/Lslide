@@ -51,7 +51,7 @@
 contrastFilterSegmentation <- function(input.filter, input.segmentation = input.filter, offset = 0.06, makeBrush.size = 25, makeBrush.shape = "disc", NA.val.in = 0, clump.thresh = NULL, clump.directions = 8, env.rsaga = RSAGA::rsaga.env(),
                                        CFR.buf = "1", output.path = tempdir(), writeCFRaster = FALSE, writeRaster.NAflag = -99999, freeMemory = TRUE, SOOC = FALSE, quiet = TRUE,
                                        Grass.Segmentation.Threshold = 0.24, Grass.Segmentation.Minsize = 0, Grass.Segmentation.Memory = 1024, Segments.Poly =  paste0(tempdir(), "/", "outSegPoly.shp"),   Segments.Grid = paste0(tempdir(), "/", "outSegGrid.sgrd"),
-                                       defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"), ...)
+                                       defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"), load.output = FALSE, ...)
 {
 
   if(quiet == FALSE) process.time.start <- proc.time()
@@ -60,7 +60,7 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
 
   # creation of gray scale image
   if(quiet == FALSE) cat("... convert input raster to grey-scale-matrix\n")
-  gsm <- convR2GSM(r = input.filter, NA.val.in = NA.val.in)
+  gsm <- Lslide::convR2GSM(r = input.filter, NA.val.in = NA.val.in)
 
 
   # Start contrast filter -----------------
@@ -278,19 +278,24 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
     GRID = paste0(tools::file_path_sans_ext(Segments.Grid), ".tif"), POLYGONS =  Segments.Poly))
 
 
-
-  if(quiet == FALSE) cat("... Loading Segments: Using sf::() and conversion to SpatialPolygonsDataFrame\n")
-  outpoly <- sf::st_read(Segments.Poly, quiet = !SOOC)
-  outpoly <- as(outpoly, "Spatial")
-
-  if(is.na(sp::proj4string(outpoly)))
+  if(load.output == TRUE)
   {
-    proj4string(outpoly) <- projection(input.filter)
+    if(quiet == FALSE) cat("... Loading Segments: Using sf::() and conversion to SpatialPolygonsDataFrame\n")
+    outpoly <- sf::st_read(Segments.Poly, quiet = !SOOC)
+    outpoly <- as(outpoly, "Spatial")
+
+    if(is.na(sp::proj4string(outpoly)))
+    {
+      proj4string(outpoly) <- projection(input.filter)
+    }
+
+    if(quiet == FALSE) cat(paste0("------ Run of contrastFilterSegmentation: " , (proc.time() - process.time.start)["elapsed"][[1]]/60, " Minutes ------"))
+
+    return(outpoly)
   }
 
   if(quiet == FALSE) cat(paste0("------ Run of contrastFilterSegmentation: " , (proc.time() - process.time.start)["elapsed"][[1]]/60, " Minutes ------"))
 
-  return(outpoly)
 } # end function contrastFilterSegmentation
 
 
