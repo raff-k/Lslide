@@ -27,8 +27,8 @@ convR2GSM <- function(r, NA.val.in = 0)
 
 
   # stretching to 0-255 range
-  minV <- minValue(r)
-  maxV <- maxValue(r)
+  minV <- raster::minValue(r)
+  maxV <- raster::maxValue(r)
 
   # the linear normalization
   # scale function
@@ -41,8 +41,9 @@ convR2GSM <- function(r, NA.val.in = 0)
   r <- raster::calc(r, fun=function(x){return(x/255)})
 
   # convert to matrix
-  r <- as.matrix(r)
+  r <- raster::as.matrix(r)
 
   # return matrix
   return(r)
 }
+

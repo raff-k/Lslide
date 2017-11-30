@@ -10,9 +10,10 @@ Description: This package was created with respect to the authors master thesis.
 Imports: 
          cleangeo (>= 0.2.1),
          data.table (>= 1.10.0),
-         link2GI (0.1.0), 
+         link2GI (>= 0.1-0), 
          foreign (>= 0.8.67),
          maptools (>= 0.8.40),
+         igraph(>= 1.1.2), 
          mclust (>= 5.2.2),
          raster (>= 2.5.8),
          rgdal (>= 1.2.4),

@@ -4,15 +4,18 @@
 #' The toolbox is based on the Geomorphometry & Gradient Metrics Toolbox from Jeffrey Evans.
 #' Actually, it supports the computation of 'Linear Aspect', 'Mean Slope', 'Site Exposure Index',
 #' 'Landform' (concavity/convexity landform index (Bolstads variant)) and 'Roughness Index'.
-#' 
-#' @param elevation \linkS4class{RasterLayer} with elevation data 
+#'
+#' @param elevation \linkS4class{RasterLayer} with elevation data
 #' @param slope \linkS4class{RasterLayer} with slope values. As default the slope will be computet using \emph{RQGIS::run_qgis(alg = "grass7:r.slope.aspect")}. Default: NULL
 #' @param aspect \linkS4class{RasterLayer} with aspect values. As default the aspect will be computet using \emph{RQGIS::run_qgis(alg = "grass7:r.slope.aspect")}. Default: NULL
 #' @param tool vector containg the name of tools. Actually, the following are supported: "Linear Aspect", "Landfrom", "Mean Slope",  "SEI", "RI". Default: c("Linear Aspect", "Landfrom", "Mean Slope",  "SEI", "RI")
 #' @param params list of lists containing function parameter for functions in tool. There are basically three parameters defining the (1) "size" of moving window, (2) the filename, and (3) a logical value if the raster shall be written (writeRaster).  I.e. for "Linear Aspect" - list(size = 3, filename = "LinAspect.tif", writeRaster = TRUE). Default: see notice
 #' @param zScale multiplicative factor to convert elevation units to horizontal units. Default: "1.0"
+#' @param defaultGrass GRASS GIS path to for initialisation using link2GI. Default: c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"),
+#' @param initGRASS.path GRASS GIS path for initialisation using rgrass7. Default: "C:/OSGeo4W64/apps/grass/grass-7.2.2"
 #' @param output.path path to output folder. Default: tempdir()
 #' @param quiet no outputs in console. Default: TRUE
+#' @param use.link2GI = TRUE
 #'
 #' @return
 #' List of \linkS4class{RasterLayer} containing computed geomorphometric indices or gradient models
@@ -25,26 +28,59 @@
 #'
 #'
 #' @keywords Geomorphometry & Gradient Metrics Toolbox, Jeffrey Evans, Linear Aspect, Mean Slope, Site Exposure Index, Landform, Roughness Index
-#' 
+#'
 #'
 #' @export
 #'
 GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect = NULL, tool = c("Linear Aspect", "Landfrom", "Mean Slope",  "SEI", "RI"),
-                                                 params = params, zScale = "1.0", output.path = tempdir(), quiet = TRUE)
+                                                 params = params, zScale = "1.0", output.path = tempdir(), use.link2GI = TRUE, defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"),
+                                                 initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2", mask = NULL, NODATA = -99999, quiet = TRUE)
 {
+
+  # browser()
+
+  if(missing(params))
+  {
+    # Initialize default parameters --------------------
+    params <- list(list(size = 3, filename = "LinAspect.tif", writeRaster = TRUE), # Linear Aspect
+                   list(size = 3, filename = "Landform.tif", writeRaster = TRUE), # Landfrom
+                   list(size = 3, filename = "MeanSlp.tif", writeRaster = TRUE), # Mean Slope
+                   list(size = 3, filename = "SEI.tif", writeRaster = TRUE), # SEI
+                   list(size = 3, filename.RI = "RI.tif", filename.RIw = "RIw.tif", writeRaster = TRUE)) # RI
+
+  }
 
   # TO DO: PARALLELIZING, POSSIBILITY TO ADD ANOTHER ALGORYTHM IN RQGIS FOR EXAMPLE ONE OF SAGA GIS
 
   # get start time of process
   if(quiet == FALSE) process.time.start <- proc.time()
 
+  # if(use.link2GI)
+  #   {
+  #     tryCatch({invisible(link2GI::linkGRASS7(x = elevation, defaultGrass))},
+  #              error = function(e) {
+  #                cat("link2GI::linkGRASS7 throwed an Error... Trying grass7::initGrass() now...\n")
+  #
+  #                tryCatch({invisible(rgrass7::initGRASS(initGRASS.path, home=tempdir(), override = TRUE,
+  #                                                       SG = as(elevation, 'SpatialGridDataFrame')))},
+  #                         error = function(err){
+  #                           stop("Something wrong with the initialisation of GRASS GIS: ", err)
+  #                         })
+  #              })
+  # } else {
+  #   tryCatch({invisible(rgrass7::initGRASS(initGRASS.path, home=tempdir(), override = TRUE,
+  #                                          SG = as(elevation, 'SpatialGridDataFrame')))},
+  #            error = function(err){
+  #              stop("Something wrong with the initialisation of GRASS GIS: ", err)
+  #            })
+  # }
 
-  # Initialize default parameters --------------------
-  params <- list(list(size = 3, filename = "LinAspect.tif", writeRaster = TRUE), # Linear Aspect
-                         list(size = 3, filename = "Landform.tif", writeRaster = TRUE), # Landfrom
-                         list(size = 3, filename = "MeanSlp.tif", writeRaster = TRUE), # Mean Slope
-                         list(size = NA, filename = "SEI.tif", writeRaster = TRUE), # SEI
-                         list(size = 3, filename.RI = "RI.tif", filename.RIw = "RIw.tif", writeRaster = TRUE)) # RI
+   # load data into GRASS
+  cat(" ... initialisation was successfull, reading elevation into GRASS ...\n")
+
+    rgrass7::writeRAST(x = as(elevation, 'SpatialGridDataFrame'), vname = "elevation",
+                     zcol =  names(elevation), useGDAL = TRUE, flags = c("overwrite"))
+
 
 
   # Check slope or aspect input --------------------
@@ -58,10 +94,40 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
       # RQGIS::get_args_man(alg = "grass7:r.slope.aspect")
       slope.aspect <- RQGIS::run_qgis(alg = "grass7:r.slope.aspect", elevation = elevation, show_output_paths = FALSE,
                                       slope = paste0(output.path , "/","slope.tif"), aspect = paste0(output.path , "/", "aspect.tif"), load_output = TRUE)
+
+      # print(rgrass7::parseGRASS("r.slope.aspect"))
+      # rgrass7::execGRASS("r.slope.aspect", flags = c("overwrite"), parameters = list(
+      #                    elevation = "elevation", slope = "tmpSlope"))
+
+      # rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
+      #   input = "dtm", output = "dtm.sum", method = "sum", size = 5))
+
+
     } else {
       slope.aspect <- RQGIS::run_qgis(alg = "grass7:r.slope.aspect", elevation = elevation, zscale = zScale, show_output_paths = FALSE,
                                       slope = paste0(output.path , "/" ,"slope.tif"), aspect = paste0(output.path , "/", "aspect.tif"), load_output = TRUE)
+
+     # rgrass7::execGRASS("r.slope.aspect", flags = c("overwrite", "quiet"),
+     #                   elevation = "elevation", slope = "tmpSlope", aspect = "tmpAspect", zscale = numeric(zScale))
     }
+
+
+    # get data from GRASS (may be depricated in future)
+    # print(rgrass7::parseGRASS("r.slope.aspect"))
+    #
+    # print(rgrass7::parseGRASS("r.out.gdal"))
+    # rgrass7::execGRASS("r.out.gdal", parameters = list(
+    #   input = "tmpSlope",  output = paste0(tempdir(), "/outSlp.tif")))
+    # test <- raster::raster(paste0(tempdir(), "/outSlp.tif"))
+    #
+    # slope.rgrass7 <- raster::raster(rgrass7::readRAST("tmpSlope", close_OK = FALSE))
+    # projection(slope.rgrass7) <- projection(elevation)
+    # aspect.rgrass7 <- raster::raster(rgrass7::readRAST("tmpAspect", close_OK = FALSE))
+    # projection(aspect.rgrass7) <- projection(elevation)
+    #
+    # slope.aspect <- list(slope.rgrass7, aspect.rgrass7)
+
+
 
     # get slope from QGIS result
     if(is.null(slope)) slope <- slope.aspect[[1]]
@@ -75,7 +141,19 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
       aspect <- raster::calc(aspect, fun = function(x) { return((450 - x) %% 360)})
     }
 
+    # rm(slope.aspect, slope.rgrass7, aspect.rgrass7) # may be depricated in future
   } # end check slope aspect input
+
+
+    if(!is.null(mask))
+    {
+      slope <- raster::overlay(slope, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})
+      raster::writeRaster(x = slope, filename = paste0(output.path , "/","slope.tif"), overwrite = TRUE)
+
+      aspect <- raster::overlay(aspect, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})
+      raster::writeRaster(x = aspect, filename = paste0(output.path , "/","aspect.tif"), overwrite = TRUE)
+
+    }
 
 
   # Check tools to call functions  --------------------
@@ -107,6 +185,9 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
   params.SEI <- params[[loc.SEI]]
   params.RI <- params[[loc.RI]]
 
+  if(quiet == FALSE) cat("-------------------------\n")
+  if(quiet == FALSE) cat("-------------------------\n")
+  if(quiet == FALSE) cat("-------------------------\n")
 
 
   # FUNCTIONS ---------------------------------
@@ -126,15 +207,42 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     tmp.cos <- raster::calc(tmp.aspect, cos)
 
     # calculate sums in focal statistics for sin and cos
-    tmp.sin <- raster::focal(tmp.sin, w = matrix(1, size, size), fun = sum, na.rm = TRUE)
-    tmp.cos <- raster::focal(tmp.cos, w = matrix(1, size, size), fun = sum, na.rm = TRUE)
+    # RQGIS::find_algorithms("neighbor")
+    # RQGIS::get_args_man(alg = "grass7:r.neighbors")
+    # RQGIS::get_usage(alg = "grass7:r.neighbors")
+    # tmp.sin <- RQGIS::run_qgis(alg = "grass7:r.neighbors", input = tmp.sin, method = "6", size = as.character(size), output = "tmpSin.tif", load_output = TRUE, show_output_paths = FALSE)
+    # tmp.cos <- RQGIS::run_qgis(alg = "grass7:r.neighbors", input = RQGIS::dem, method = "6", size = "3", output = "tmpCos.tif", load_output = TRUE, show_output_paths = FALSE)
 
+    # tmp.sin <- raster::focal(tmp.sin, w = matrix(1, size, size), fun = sum, na.rm = TRUE, NAonly=TRUE, pad=TRUE)
+    # tmp.cos <- raster::focal(tmp.cos, w = matrix(1, size, size), fun = sum, na.rm = TRUE, NAonly=TRUE, pad=TRUE)
+
+    # load data into GRASS
+      rgrass7::writeRAST(as(tmp.sin, 'SpatialGridDataFrame'), "tmp.sin",
+                         zcol = names(tmp.sin), useGDAL = TRUE, flags = c("overwrite"))
+
+      rgrass7::writeRAST(as(tmp.cos, 'SpatialGridDataFrame'), "tmp.cos",
+                         zcol = names(tmp.cos), useGDAL = TRUE, flags = c("overwrite"))
+
+    # perform focal statistics
+    # print(rgrass7::parseGRASS("r.neighbors"))
+    rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
+        input = "tmp.sin", output = "tmp.sin.sum", method = "sum", size = size))
+
+    rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
+      input = "tmp.cos", output = "tmp.cos.sum", method = "sum", size = size))
+
+
+    # get data from GRASS GIS
+    tmp.sin <- raster::raster(rgrass7::readRAST("tmp.sin.sum", close_OK = FALSE))
+    tmp.cos <- raster::raster(rgrass7::readRAST("tmp.cos.sum", close_OK = FALSE))
 
     # start final calculations
     tmp.Mod <- raster::overlay(tmp.sin, tmp.cos, fun = function(x, y){return((((450-(atan2(x, y) * 57.296)) * 100) %% 36000)/100)})
 
     if(quiet == FALSE) cat("... final calculation\n")
     outRaster.linearAspect <- raster::overlay(tmp.sin, tmp.cos, tmp.Mod, fun = function(x, y, z) {ifelse((x == 0) & (y == 0), -1, z)})
+
+    projection(outRaster.linearAspect) <- projection(aspect.Fun)
 
     if(writeRaster == TRUE)
     {
@@ -144,6 +252,8 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     }
 
     if(quiet == FALSE) cat(paste0("------ Run of Linear Aspect: " , (proc.time() - process.time.start.LinearAspect)["elapsed"][[1]]/60, " Minutes ------\n"))
+    if(quiet == FALSE) cat("-------------------------\n")
+    if(quiet == FALSE) cat("-------------------------\n")
     if(quiet == FALSE) cat("-------------------------\n")
 
     names(outRaster.linearAspect) <- "Linear Aspect"
@@ -162,12 +272,28 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
 
 
     # calculate focal statistics: mean
-    mean.Tmp <- raster::focal(elevation.Fun, w = matrix(1, size, size), fun = mean, na.rm = TRUE)
+    # mean.Tmp <- raster::focal(elevation.Fun, w = matrix(1, size, size), fun = mean, na.rm = TRUE)
+    # load data into GRASS
+    # rgrass7::writeRAST(as(elevation.Fun, 'SpatialGridDataFrame'), "mean.Tmp",
+    #                    zcol = names(mean.Tmp), useGDAL = TRUE, flags = c("overwrite"))
+
+    # rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
+    #   input = "elevation", output = "tmp.elevation.mean", method = "average", size = size))
+
+    # RQGIS::get_usage(alg = "grass7:r.neighbors")
+    mean.Tmp <- RQGIS::run_qgis(alg = "grass7:r.neighbors", input = elevation.Fun, method = "0", size = size, output = "tmpMeanElev.tif",
+                                load_output = TRUE, show_output_paths = FALSE)
+
+    # get data from GRASS GIS
+    # mean.Tmp <- raster::raster(rgrass7::readRAST("tmp.elevation.mean", close_OK = FALSE))
+    # projection(mean.Tmp) <- projection(elevation.Fun)
 
 
     # calculate landform
     if(quiet == FALSE) cat("... calculate landform\n")
     outRaster.landfrom <- raster::overlay(elevation.Fun, mean.Tmp, fun = function(x, y) {return(10000 * ((x - y)/1000/36.2))})
+
+    if(!is.null(mask)){outRaster.landfrom <- raster::overlay(outRaster.landfrom, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
 
     if(writeRaster == TRUE)
     {
@@ -177,6 +303,8 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     }
 
     if(quiet == FALSE) cat(paste0("------ Run of Landform: " , (proc.time() - process.time.start.Landform)["elapsed"][[1]]/60, " Minutes ------\n"))
+    if(quiet == FALSE) cat("-------------------------\n")
+    if(quiet == FALSE) cat("-------------------------\n")
     if(quiet == FALSE) cat("-------------------------\n")
 
     names(outRaster.landfrom) <- "Landform"
@@ -189,7 +317,7 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
 
 
   # Mean Slope --------------------------
-  MeanSlope <- function(slope.Fun = slope, size = params.MeanSlp$size, filename = params.MeanSlp$filename, writeRaster = params.MeanSlp$writeRaster)
+  MeanSlope <- function(slope.Fun = slope, size.MS = params.MeanSlp$size, filename = params.MeanSlp$filename, writeRaster = params.MeanSlp$writeRaster)
   {
 
     if(quiet == FALSE) process.time.start.MeanSlope <- proc.time()
@@ -197,7 +325,28 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     if(quiet == FALSE) cat("Running Mean Slope ...\n")
 
     if(quiet == FALSE) cat("... calculate mean slope\n")
-    outRaster.meanSlope <- raster::focal(slope.Fun, w = matrix(1, size, size), fun = mean, na.rm = TRUE)
+
+    # outRaster.meanSlope <- raster::focal(slope.Fun, w = matrix(1, size, size), fun = mean, na.rm = TRUE)
+    # rgrass7::writeRAST(as(slope.Fun, 'SpatialGridDataFrame'), "tmp.slope",
+    #                    zcol = names(slope.Fun), useGDAL = TRUE, flags = c("overwrite"))
+    #
+    # rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
+    #   input = "tmp.slope", output = "tmp.slope.mean", method = "average", size = size))
+
+
+
+    outRaster.meanSlope <- RQGIS::run_qgis(alg = "grass7:r.neighbors", input = slope.Fun, method = "0", size = size, output = "tmpMeanSlp.tif",
+                                load_output = TRUE, show_output_paths = FALSE)
+    # remove value smaller 0
+    outRaster.meanSlope <- raster::calc(outRaster.meanSlope, fun = function(x){ifelse(x < 0, 0, x)})
+
+
+     if(!is.null(mask)){outRaster.meanSlope <- raster::overlay(outRaster.meanSlope, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+
+
+    # get data from GRASS GIS
+    # outRaster.meanSlope  <- raster::raster(rgrass7::readRAST("tmp.slope.mean", close_OK = FALSE))
+    # projection(outRaster.meanSlope) <- projection(slope.Fun)
 
 
     if(writeRaster == TRUE)
@@ -207,6 +356,8 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     }
 
     if(quiet == FALSE) cat(paste0("------ Run of Mean Slope: " , (proc.time() - process.time.start.MeanSlope)["elapsed"][[1]]/60, " Minutes ------\n"))
+    if(quiet == FALSE) cat("-------------------------\n")
+    if(quiet == FALSE) cat("-------------------------\n")
     if(quiet == FALSE) cat("-------------------------\n")
 
     names(outRaster.meanSlope) <- "MeanSlope"
@@ -222,13 +373,16 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
   {
 
     if(quiet == FALSE) process.time.start.SEI <- proc.time()
-
     if(quiet == FALSE) cat("Running Site Exposure Index ...\n")
+
 
     tmp.cosResult <- raster::calc(aspect.Fun, fun = function(x) { return(cos((3.142 * (x - 180))/180))})
 
+
     if(quiet == FALSE) cat("... calculate Site Exposure Index\n")
     outraster.SEI <- raster::overlay(slope.Fun, tmp.cosResult, fun = function(x, y) {return(x * y)})
+    if(!is.null(mask)){outraster.SEI <- raster::overlay(outraster.SEI, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+
 
     if(writeRaster == TRUE)
     {
@@ -239,6 +393,9 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
 
     if(quiet == FALSE) cat(paste0("------ Run of Site Exposure Index: " , (proc.time() - process.time.start.SEI)["elapsed"][[1]]/60, " Minutes ------\n"))
     if(quiet == FALSE) cat("-------------------------\n")
+    if(quiet == FALSE) cat("-------------------------\n")
+    if(quiet == FALSE) cat("-------------------------\n")
+
 
     names(outraster.SEI) <- "SEI"
     return(outraster.SEI)
@@ -259,7 +416,21 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
 
     # moving window mean of input
     if(quiet == FALSE) cat("... moving window mean\n")
-    tmp.mean <- raster::focal(elevation.Fun, w = matrix(1, size, size), fun = mean, na.rm = TRUE)
+    # tmp.mean <- raster::focal(elevation.Fun, w = matrix(1, size, size), fun = mean, na.rm = TRUE)
+
+    # rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
+    #   input = "elevation", output = "tmp.elevation.mean", method = "average", size = size))
+    #
+    # tmp.mean <- raster::raster(rgrass7::readRAST("tmp.elevation.mean", close_OK = FALSE))  # get data from GRASS GIS
+    # projection(tmp.mean) <- projection(elevation.Fun)
+
+    tmp.mean <- RQGIS::run_qgis(alg = "grass7:r.neighbors", input = elevation.Fun , method = "0", size = size, output = "tmpMeanElev.tif",
+                                           load_output = TRUE, show_output_paths = FALSE)
+
+    if(!is.null(mask)){tmp.mean <- raster::overlay(tmp.mean, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+
+
+
 
     # difference beteen original and smoothed: residual topography
     if(quiet == FALSE) cat("... calculate residual topography\n")
@@ -275,8 +446,23 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     {
       # RQGIS::get_args_man(alg = "grass7:r.neighbors")
       if(quiet == FALSE) cat("... calculate Roughness Index\n")
-      outraster.RI  <- RQGIS::run_qgis(alg = "grass7:r.neighbors", size = as.character(size), output = paste0(output.path, '/', filename.RI),
-                                       input = tmp.dif , method = "stddev", load_output = TRUE, show_output_paths = FALSE)
+
+      outraster.RI  <- RQGIS::run_qgis(alg = "grass7:r.neighbors",
+                                       input = tmp.dif , method = "stddev", size = size, output = paste0(output.path, '/', filename.RI), load_output = TRUE, show_output_paths = FALSE)
+
+      if(!is.null(mask)){outraster.RI  <- raster::overlay(outraster.RI, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+
+
+      # rgrass7::writeRAST(as(tmp.dif, 'SpatialGridDataFrame'), "tmp.dif",
+      #                    zcol = names(tmp.dif), useGDAL = TRUE, flags = c("overwrite"))
+      #
+      # rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
+      #   input = "tmp.dif", output = "tmp.dif.stddev", method = "stddev", size = size))
+      #
+      # outraster.RI  <- raster::raster(rgrass7::readRAST("tmp.dif.stddev", close_OK = FALSE))  # get data from GRASS GIS
+      # projection(outraster.RI) <- projection(elevation.Fun)
+
+
 
       # weighted
       # RI.max <- maxValue(outraster.RI[!is.na(outraster.RI)])
@@ -292,8 +478,22 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     } else {
 
       if(quiet == FALSE) cat("... calculate Roughness Index\n")
-      outraster.RI  <- RQGIS::run_qgis(alg = "grass7:r.neighbors", size = as.character(size),
-                                       input = tmp.dif , method = "stddev", load_output = TRUE)
+
+      outraster.RI  <- RQGIS::run_qgis(alg = "grass7:r.neighbors",
+                                       input = tmp.dif , method = "stddev", size = size, output = paste0(output.path, '/', filename.RI), load_output = TRUE)
+
+      if(!is.null(mask)){outraster.RI  <- raster::overlay(outraster.RI, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+
+
+      # rgrass7::writeRAST(as(tmp.dif, 'SpatialGridDataFrame'), "tmp.dif",
+      #                    zcol = names(tmp.dif), useGDAL = TRUE, flags = c("overwrite"))
+      #
+      # rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
+      #   input = "tmp.dif", output = "tmp.dif.stddev", method = "stddev", size = size))
+
+      # outraster.RI  <- raster::raster(rgrass7::readRAST("tmp.dif.stddev", close_OK = FALSE))  # get data from GRASS GIS
+      # projection(outraster.RI) <- projection(elevation.Fun)
+
 
       RI.max <- cellStats(outraster.RI,'max')
       if(quiet == FALSE) cat("... calculate normalized Roughness Index\n")
@@ -302,6 +502,8 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     } # enf if write == TRUE
 
     if(quiet == FALSE) cat(paste0("------ Run of Roughness Index: " , (proc.time() - process.time.start.RI)["elapsed"][[1]]/60, " Minutes ------\n"))
+    if(quiet == FALSE) cat("-------------------------\n")
+    if(quiet == FALSE) cat("-------------------------\n")
     if(quiet == FALSE) cat("-------------------------\n")
 
     names(outraster.RI) <- "RI"
@@ -335,7 +537,7 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
 
   return(list.i)
 
-} # end function GeomorphometryGradientMetricsToolbox
+} # end function GeomorphometryGradientMetricsToolbox ----------------------
 
 
 
@@ -358,22 +560,94 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
 
 
 
-# # EXAMPLE --------------------------
-# pacman::p_load(RQGIS, raster)
+# EXAMPLE --------------------------
+
+# processing.runalg("grass7:r.slope.aspect", rlayer,   "0",  "0",  "1.0",  "0.0", None, "0.0", "E:/slope.tif", None, None, None, None, None, None, None, None)
+
+# pacman::p_load(rgrass7, raster, link2GI, RQGIS)
 #
-# data(dem)
-# dem <- dem
-#
-# setwd("D:/Users/rAVer/Desktop/LSlide New")
-#
-# dtm <- raster::raster("Input/dtm.tif")
-# # dtm <- raster::raster("Input/DTM_Po_30m.tif")
-#
+# RQGIS::set_env(new = TRUE, dev = TRUE)
+# RQGIS::open_app()
+# dem <- RQGIS::dem
 # elevation <- dem
 #
-# set_env()
-# open_app()
-# geomorph <- GeomorphometryGradientMetricsToolbox(elevation = dem, quiet = FALSE)
+#
+# # set OSGE4W base directory
+# osgeo4w.root<-"C:\\OSGEO4W64"
+# Sys.setenv(OSGEO4W_ROOT=osgeo4w.root)
+# # define GISBASE
+# grass.gis.base<-paste0(osgeo4w.root,"\\apps\\grass\\grass-7.2.2")
+# Sys.setenv(GISBASE=grass.gis.base)
+#
+# Sys.setenv(GRASS_PYTHON=paste0(Sys.getenv("OSGEO4W_ROOT"),"\\bin\\python.exe"))
+# Sys.setenv(PYTHONHOME=paste0(Sys.getenv("OSGEO4W_ROOT"),"\\apps\\Python27"))
+# Sys.setenv(PYTHONPATH=paste0(Sys.getenv("OSGEO4W_ROOT"),"\\apps\\grass\\grass-7.2.2\\etc\\python"))
+# Sys.setenv(GRASS_PROJSHARE=paste0(Sys.getenv("OSGEO4W_ROOT"),"\\share\\proj"))
+# Sys.setenv(PROJ_LIB=paste0(Sys.getenv("OSGEO4W_ROOT"),"\\share\\proj"))
+# Sys.setenv(GDAL_DATA=paste0(Sys.getenv("OSGEO4W_ROOT"),"\\share\\gdal"))
+# Sys.setenv(GEOTIFF_CSV=paste0(Sys.getenv("OSGEO4W_ROOT"),"\\share\\epsg_csv"))
+# Sys.setenv(FONTCONFIG_FILE=paste0(Sys.getenv("OSGEO4W_ROOT"),"\\etc\\fonts.conf"))
+#
+# # create PATH variable
+# # set OSGE4W base directory
+# osgeo4w.root<-"C:\\OSGEO4W64"
+# Sys.setenv(OSGEO4W_ROOT=osgeo4w.root)
+# grass.gis.base<-paste0(osgeo4w.root,"\\apps\\grass\\grass-7.2.2")
+# Sys.setenv(GISBASE=grass.gis.base)
+# Sys.setenv(PATH=paste0(grass.gis.base,";",
+#                        "C:\\OSGEO4~1\\apps\\Python27\\lib\\site-packages\\numpy\\core",";",
+#                        "C:\\OSGeo4W64\\apps\\grass\\grass-7.2.2\\bin",";",
+#                        "C:\\OSGeo4W64\\apps\\grass\\grass-7.2.2\\lib",";",
+#                        "C:\\OSGeo4W64\\apps\\grass\\grass-7.2.2\\etc",";",
+#                        "C:\\OSGeo4W64\\apps\\grass\\grass-7.2.2\\etc\\python",";",
+#                        "C:\\OSGeo4W64\\apps\\Python27\\Scripts",";",
+#                        "C:\\OSGeo4W64\\bin",";",
+#                        "c:\\OSGeo4W64\\apps",";",
+#                        "C:\\OSGEO4~1\\apps\\saga",";",
+#                        paste0(Sys.getenv("WINDIR"),"/WBem"),";",
+#                        Sys.getenv("PATH")))
+#
+#
+# initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2"
+#
+# # invisible(rgrass7::initGRASS(initGRASS.path, home=tempdir(), override = TRUE,
+# #                                  SG = as(elevation, 'SpatialGridDataFrame')))
+#
+#
+#
+#
+# # setwd("D:/Users/rAVer/Desktop/LSlide New")
+# setwd("E:/PBAvsOBIA/Geom/Oberpullendorf_2014/Kamila/5m")
+#
+# dtm <- raster::raster("dtm5.tif")
+# slope <- raster::raster("slopeGRASS.tif")
+# aspect <- raster::raster("aspectGRASS.tif")
+#
+# invisible(rgrass7::initGRASS(initGRASS.path, home=tempdir(), override = TRUE,
+#                              SG = as(dtm, 'SpatialGridDataFrame')))
+#
+# params.Input <- list(list(size = 3, filename = "LinAspect.tif", writeRaster = TRUE),
+#                      list(size = 7, filename = "Landform.tif", writeRaster = TRUE),
+#                      list(size = 9, filename = "MeanSlp.tif", writeRaster = TRUE),
+#                      list(size = 3, filename = "SEI.tif", writeRaster = TRUE),
+#                      list(size = 7, filename.RI = "RI.tif", filename.RIw = "RIw.tif", writeRaster = TRUE))
+#
+# geomorph <- GeomorphometryGradientMetricsToolbox(elevation = RQGIS::dem, quiet = FALSE)
+#
+# geomorph <- GeomorphometryGradientMetricsToolbox(elevation = dtm, params = params.Input, slope = slope, aspect = aspect,
+#                                                  output.path = paste0(getwd(), "/MyOutput/"), mask = slope, quiet = FALSE)
+#
+# geomorphT <- GeomorphometryGradientMetricsToolbox(elevation = dtm, mask = dtm, quiet = FALSE)
+#
+# geomorphTT <- GeomorphometryGradientMetricsToolbox(elevation = dtm, params = params.Input, mask = dtm, quiet = FALSE)
+#
+# geomorph <- GeomorphometryGradientMetricsToolbox(elevation = dtm, quiet = FALSE, use.link2GI = FALSE)
+#
+#
+# summary(values(geomorph[[3]]))
+# summary(values(geomorphT[[3]]))
+# summary(values(geomorphTT[[3]]))
+#
 # # size <- "3"
 # size <- 3
 # out.path.linearAspect <- "Output/LinearAspect.tif"

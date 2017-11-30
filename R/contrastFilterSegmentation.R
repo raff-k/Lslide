@@ -54,6 +54,8 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
                                        defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"), load.output = FALSE, ...)
 {
 
+  # browser()
+
   if(quiet == FALSE) process.time.start <- proc.time()
   if(quiet == FALSE) cat("Start Contrast-Filter-Segmentation ...\n")
 
@@ -90,12 +92,15 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
   # removal of clumps
   if(!is.null(clump.thresh) && clump.thresh > 0)
   {
+    # require(igraph)
+
     if(quiet == FALSE) cat("... removal of clumbs based on threshold: ", clump.thresh, "\n")
     if(quiet == FALSE) cat("... ... calculate clumps\n")
+
     clumps <- raster::clump(gsm.output, directions = clump.directions, ...) # need some time
 
     # calculate pixel frequency for each clumpID
-    clumpFreq <- as.data.table(freq(clumps))
+    clumpFreq <- data.table::as.data.table(freq(clumps))
 
     # clumpID to be excluded from output raster
     excludeVal <- clumpFreq[count <= clump.thresh, value]
@@ -274,7 +279,7 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
   # shapes_grid
   # rsaga.get.modules("shapes_grid", env = env.rsaga)
   # rsaga.get.usage("shapes_grid", 6, env = env.rsaga)
-  rsaga.geoprocessor(lib = "shapes_grid", module = 6, env = env.rsaga, show.output.on.console = SOOC, param = list(
+  RSAGA::rsaga.geoprocessor(lib = "shapes_grid", module = 6, env = env.rsaga, show.output.on.console = SOOC, param = list(
     GRID = paste0(tools::file_path_sans_ext(Segments.Grid), ".tif"), POLYGONS =  Segments.Poly))
 
 
@@ -289,12 +294,12 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
       proj4string(outpoly) <- projection(input.filter)
     }
 
-    if(quiet == FALSE) cat(paste0("------ Run of contrastFilterSegmentation: " , (proc.time() - process.time.start)["elapsed"][[1]]/60, " Minutes ------"))
+    if(quiet == FALSE) cat(paste0("------ Run of contrastFilterSegmentation: " , (proc.time() - process.time.start)["elapsed"][[1]]/60, " Minutes ------\n"))
 
     return(outpoly)
   }
 
-  if(quiet == FALSE) cat(paste0("------ Run of contrastFilterSegmentation: " , (proc.time() - process.time.start)["elapsed"][[1]]/60, " Minutes ------"))
+  if(quiet == FALSE) cat(paste0("------ Run of contrastFilterSegmentation: " , (proc.time() - process.time.start)["elapsed"][[1]]/60, " Minutes ------\n"))
 
 } # end function contrastFilterSegmentation
 
