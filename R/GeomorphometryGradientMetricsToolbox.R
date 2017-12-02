@@ -14,6 +14,8 @@
 #' @param defaultGrass GRASS GIS path to for initialisation using link2GI. Default: c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"),
 #' @param initGRASS.path GRASS GIS path for initialisation using rgrass7. Default: "C:/OSGeo4W64/apps/grass/grass-7.2.2"
 #' @param output.path path to output folder. Default: tempdir()
+#' @param mask \linkS4class{RasterLayer} that serves as mask. Default: NULL
+#' @param mask.by.thres all values equal and higher than (>=) the threshold is masked. Default: NULL otherwhise numeric. TODO: flexible way to mask ranges or values smaller than.
 #' @param quiet no outputs in console. Default: TRUE
 #' @param use.link2GI = TRUE
 #' @param load.ElevationIntoGRASS write the elevation input into GRASS GIS. Default: TRUE
@@ -35,7 +37,7 @@
 #'
 GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect = NULL, tool = c("Linear Aspect", "Landfrom", "Mean Slope",  "SEI", "RI"),
                                                  params = params, zScale = "1.0", output.path = tempdir(), use.link2GI = TRUE, defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"),
-                                                 initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2", mask = NULL, NODATA = -99999, load.ElevationIntoGRASS = TRUE, quiet = TRUE)
+                                                 initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2", mask = NULL, mask.by.thres = NULL, NODATA = -99999, load.ElevationIntoGRASS = TRUE, quiet = TRUE)
 {
 
   # browser()
@@ -159,6 +161,16 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
 
     }
 
+  if(!is.null(mask.by.thres))
+  {
+    slope <- raster::calc(slope, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})
+    raster::writeRaster(x = slope, filename = paste0(output.path , "/","slope.tif"), overwrite = TRUE)
+
+    aspect <- raster::calc(aspect, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})
+    raster::writeRaster(x = aspect, filename = paste0(output.path , "/","aspect.tif"), overwrite = TRUE)
+  }
+
+
 
   # Check tools to call functions  --------------------
   # supported at the moment: c("Linear Aspect", "Landfrom", "Mean Slope",  "SEI", "RI")
@@ -247,6 +259,10 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     outRaster.linearAspect <- raster::overlay(tmp.sin, tmp.cos, tmp.Mod, fun = function(x, y, z) {ifelse((x == 0) & (y == 0), -1, z)})
 
     projection(outRaster.linearAspect) <- projection(aspect.Fun)
+    if(!is.null(mask)){outRaster.linearAspect <- raster::overlay(outRaster.linearAspect, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+    if(!is.null(mask.by.thres)){outRaster.linearAspect <- raster::calc(outRaster.linearAspect, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})}
+
+
 
     if(writeRaster == TRUE)
     {
@@ -298,6 +314,10 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     outRaster.landfrom <- raster::overlay(elevation.Fun, mean.Tmp, fun = function(x, y) {return(10000 * ((x - y)/1000/36.2))})
 
     if(!is.null(mask)){outRaster.landfrom <- raster::overlay(outRaster.landfrom, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+    if(!is.null(mask.by.thres)){outRaster.landfrom <- raster::calc(outRaster.landfrom, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})}
+
+
+
 
     if(writeRaster == TRUE)
     {
@@ -346,6 +366,7 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
 
 
      if(!is.null(mask)){outRaster.meanSlope <- raster::overlay(outRaster.meanSlope, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+     if(!is.null(mask.by.thres)){outRaster.meanSlope  <- raster::calc(outRaster.meanSlope, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})}
 
 
     # get data from GRASS GIS
@@ -386,6 +407,7 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     if(quiet == FALSE) cat("... calculate Site Exposure Index\n")
     outraster.SEI <- raster::overlay(slope.Fun, tmp.cosResult, fun = function(x, y) {return(x * y)})
     if(!is.null(mask)){outraster.SEI <- raster::overlay(outraster.SEI, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+    if(!is.null(mask.by.thres)){outraster.SEI  <- raster::calc(outraster.SEI, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})}
 
 
     if(writeRaster == TRUE)
@@ -435,7 +457,6 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
 
 
 
-
     # difference beteen original and smoothed: residual topography
     if(quiet == FALSE) cat("... calculate residual topography\n")
     tmp.dif <- raster::overlay(elevation.Fun, tmp.mean, fun = function(x, y) {return(x - y)}, na.rm = TRUE)
@@ -455,6 +476,7 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
                                        input = tmp.dif , method = "stddev", size = size, output = paste0(output.path, '/', filename.RI), load_output = TRUE, show_output_paths = FALSE)
 
       if(!is.null(mask)){outraster.RI  <- raster::overlay(outraster.RI, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+      if(!is.null(mask.by.thres)){outraster.RI  <- raster::calc(outraster.RI, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})}
 
 
       # rgrass7::writeRAST(as(tmp.dif, 'SpatialGridDataFrame'), "tmp.dif",
@@ -487,6 +509,7 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
                                        input = tmp.dif , method = "stddev", size = size, output = paste0(output.path, '/', filename.RI), load_output = TRUE)
 
       if(!is.null(mask)){outraster.RI  <- raster::overlay(outraster.RI, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+      if(!is.null(mask.by.thres)){outraster.RI  <- raster::calc(outraster.RI, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})}
 
 
       # rgrass7::writeRAST(as(tmp.dif, 'SpatialGridDataFrame'), "tmp.dif",
