@@ -16,6 +16,7 @@
 #' @param output.path path to output folder. Default: tempdir()
 #' @param quiet no outputs in console. Default: TRUE
 #' @param use.link2GI = TRUE
+#' @param load.ElevationIntoGRASS write the elevation input into GRASS GIS. Default: TRUE
 #'
 #' @return
 #' List of \linkS4class{RasterLayer} containing computed geomorphometric indices or gradient models
@@ -34,7 +35,7 @@
 #'
 GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect = NULL, tool = c("Linear Aspect", "Landfrom", "Mean Slope",  "SEI", "RI"),
                                                  params = params, zScale = "1.0", output.path = tempdir(), use.link2GI = TRUE, defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"),
-                                                 initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2", mask = NULL, NODATA = -99999, quiet = TRUE)
+                                                 initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2", mask = NULL, NODATA = -99999, load.ElevationIntoGRASS = TRUE, quiet = TRUE)
 {
 
   # browser()
@@ -76,10 +77,13 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
   # }
 
    # load data into GRASS
-  cat(" ... initialisation was successfull, reading elevation into GRASS ...\n")
+  if(load.ElevationIntoGRASS)
+  {
+    cat(" ... initialisation was successfull, reading elevation into GRASS ...\n")
 
     rgrass7::writeRAST(x = as(elevation, 'SpatialGridDataFrame'), vname = "elevation",
-                     zcol =  names(elevation), useGDAL = TRUE, flags = c("overwrite"))
+                       zcol =  names(elevation), useGDAL = TRUE, flags = c("overwrite"))
+  }
 
 
 

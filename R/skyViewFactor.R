@@ -139,7 +139,7 @@ skyViewFactor <- function(path.software, path.input, options_overwrite = 1, opti
   setwd(path.software)
 
 
-  if(quiet == FALSE)
+  if(quiet)
   {
     system(command = 'RVT_1.3_AutomaticStart.bat > nul 2>&1')
   } else

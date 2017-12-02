@@ -74,7 +74,7 @@ initGRASSWin <- function(x = NULL, osgeo4w.root = "C:\\OSGEO4W64", grass.version
                               stop("Something wrong with the initialisation of GRASS GIS: ", err)
                             })
                  } else {
-                   tryCatch({rgrass7::initGRASS(initGRASS.path, home=tempdir(), override = TRUE,
+                   tryCatch({rgrass7::initGRASS(initGRASS.path, home=tempdir(), override = TRUE, mapset = "PERMANENT",
                                                           SG = as(x, 'SpatialGridDataFrame'))},
                             error = function(err){
                               stop("Something wrong with the initialisation of GRASS GIS: ", err)
@@ -85,22 +85,42 @@ initGRASSWin <- function(x = NULL, osgeo4w.root = "C:\\OSGEO4W64", grass.version
   } else {
     if(quiet)
     {
-      tryCatch({invisible(rgrass7::initGRASS(initGRASS.path, home=tempdir(), override = TRUE,
-                                             SG = as(x, 'SpatialGridDataFrame')))},
+      tryCatch({invisible(rgrass7::initGRASS(initGRASS.path, home=tempdir(), override = TRUE, mapset = "PERMANENT"
+                                             ))}, # SG = as(x, 'SpatialGridDataFrame')
                error = function(err){
                  stop("Something wrong with the initialisation of GRASS GIS: ", err)
                })
     } else {
-      tryCatch({rgrass7::initGRASS(initGRASS.path, home=tempdir(), override = TRUE,
-                                   SG = as(x, 'SpatialGridDataFrame'))},
+      tryCatch({rgrass7::initGRASS(initGRASS.path, home=tempdir(), override = TRUE, mapset = "PERMANENT"
+                                   )}, # SG = as(x, 'SpatialGridDataFrame')
                error = function(err){
                  stop("Something wrong with the initialisation of GRASS GIS: ", err)
                })
     }
-  }
 
 
+    # get set projection and region
+    resolution <- raster::res(x)[1]
+    proj4 <- as.character(x@crs)
+    ymax <- x@extent@ymax
+    ymin <- x@extent@ymin
+    xmax <- x@extent@xmax
+    xmin <- x@extent@xmin
 
+    # assign GRASS projection according to data set
+    rgrass7::execGRASS('g.proj', flags = c('c','quiet'),  proj4 = proj4)
+
+    # assign GRASS extent
+    rgrass7::execGRASS('g.region', flags = c('quiet','d'),
+                         n = as.character(ymax),
+                         s = as.character(ymin),
+                         e = as.character(xmax),
+                         w = as.character(xmin),
+                         res = as.character(resolution))
+
+  if(quiet==FALSE){rgrass7::gmeta()}
+
+ }
 } # end function initGRASSWin
 
 
