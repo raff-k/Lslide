@@ -40,7 +40,7 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
                                                  initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2", mask = NULL, mask.by.thres = NULL, NODATA = -99999, load.ElevationIntoGRASS = TRUE, quiet = TRUE)
 {
 
-  # browser()
+ # browser()
 
   if(missing(params))
   {
@@ -151,7 +151,7 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
   } # end check slope aspect input
 
 
-    if(!is.null(mask))
+    if(!is.null(mask) & class(slope) == "RasterLayer")
     {
       slope <- raster::overlay(slope, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})
       raster::writeRaster(x = slope, filename = paste0(output.path , "/","slope.tif"), overwrite = TRUE)
@@ -161,7 +161,7 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
 
     }
 
-  if(!is.null(mask.by.thres))
+  if(!is.null(mask.by.thres) & class(slope) == "RasterLayer")
   {
     slope <- raster::calc(slope, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})
     raster::writeRaster(x = slope, filename = paste0(output.path , "/","slope.tif"), overwrite = TRUE)
@@ -436,6 +436,8 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
   RI <- function(elevation.Fun = elevation, size = params.RI$size, filename.RI = params.RI$filename.RI, filename.RIw = params.RI$filename.RIw, writeRaster = params.RI$writeRaster)
   {
 
+    # browser()
+
     if(quiet == FALSE) process.time.start.RI <- proc.time()
 
     if(quiet == FALSE) cat("Running Roughness Index as standard deviation of residual topography (Cavalli et al. 2008) ...\n")
@@ -444,14 +446,14 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
     if(quiet == FALSE) cat("... moving window mean\n")
     # tmp.mean <- raster::focal(elevation.Fun, w = matrix(1, size, size), fun = mean, na.rm = TRUE)
 
-    # rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
-    #   input = "elevation", output = "tmp.elevation.mean", method = "average", size = size))
-    #
-    # tmp.mean <- raster::raster(rgrass7::readRAST("tmp.elevation.mean", close_OK = FALSE))  # get data from GRASS GIS
+    rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
+      input = "elevation", output = "tmp.elevation.mean", method = "average", size = size))
+
+    tmp.mean <- raster::raster(rgrass7::readRAST("tmp.elevation.mean", close_OK = FALSE))  # get data from GRASS GIS
     # projection(tmp.mean) <- projection(elevation.Fun)
 
-    tmp.mean <- RQGIS::run_qgis(alg = "grass7:r.neighbors", input = elevation.Fun , method = "0", size = size, output = "tmpMeanElev.tif",
-                                           load_output = TRUE, show_output_paths = FALSE)
+    # tmp.mean <- RQGIS::run_qgis(alg = "grass7:r.neighbors", input = elevation.Fun , method = "0", size = size, output = "tmpMeanElev.tif",
+    #                                        load_output = TRUE, show_output_paths = FALSE)
 
     if(!is.null(mask)){tmp.mean <- raster::overlay(tmp.mean, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
 
@@ -472,21 +474,27 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
       # RQGIS::get_args_man(alg = "grass7:r.neighbors")
       if(quiet == FALSE) cat("... calculate Roughness Index\n")
 
-      outraster.RI  <- RQGIS::run_qgis(alg = "grass7:r.neighbors",
-                                       input = tmp.dif , method = "stddev", size = size, output = paste0(output.path, '/', filename.RI), load_output = TRUE, show_output_paths = FALSE)
+      # outraster.RI  <- RQGIS::run_qgis(alg = "grass7:r.neighbors",
+      #                                  input = tmp.dif , method = "stddev", size = size, output = paste0(output.path, '/', filename.RI), load_output = TRUE, show_output_paths = FALSE)
+      #
+      # if(!is.null(mask)){outraster.RI  <- raster::overlay(outraster.RI, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
+      # if(!is.null(mask.by.thres)){outraster.RI  <- raster::calc(outraster.RI, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})}
+
+
+      rgrass7::writeRAST(as(tmp.dif, 'SpatialGridDataFrame'), "tmp.dif",
+                         zcol = names(tmp.dif), useGDAL = TRUE, flags = c("overwrite"))
+
+      rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
+        input = "tmp.dif", output = "tmp.dif.stddev", method = "stddev", size = size))
+
+      outraster.RI  <- raster::raster(rgrass7::readRAST("tmp.dif.stddev", close_OK = FALSE))  # get data from GRASS GIS
+      # projection(outraster.RI) <- projection(elevation.Fun)
 
       if(!is.null(mask)){outraster.RI  <- raster::overlay(outraster.RI, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
       if(!is.null(mask.by.thres)){outraster.RI  <- raster::calc(outraster.RI, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})}
 
 
-      # rgrass7::writeRAST(as(tmp.dif, 'SpatialGridDataFrame'), "tmp.dif",
-      #                    zcol = names(tmp.dif), useGDAL = TRUE, flags = c("overwrite"))
-      #
-      # rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
-      #   input = "tmp.dif", output = "tmp.dif.stddev", method = "stddev", size = size))
-      #
-      # outraster.RI  <- raster::raster(rgrass7::readRAST("tmp.dif.stddev", close_OK = FALSE))  # get data from GRASS GIS
-      # projection(outraster.RI) <- projection(elevation.Fun)
+      raster::writeRaster(x = outraster.RI, filename = paste0(output.path, '/', filename.RI), overwrite = TRUE)
 
 
 
@@ -505,18 +513,18 @@ GeomorphometryGradientMetricsToolbox <- function(elevation, slope = NULL, aspect
 
       if(quiet == FALSE) cat("... calculate Roughness Index\n")
 
-      outraster.RI  <- RQGIS::run_qgis(alg = "grass7:r.neighbors",
-                                       input = tmp.dif , method = "stddev", size = size, output = paste0(output.path, '/', filename.RI), load_output = TRUE)
+      # outraster.RI  <- RQGIS::run_qgis(alg = "grass7:r.neighbors",
+      #                                  input = tmp.dif , method = "stddev", size = size, output = paste0(output.path, '/', filename.RI), load_output = TRUE)
 
       if(!is.null(mask)){outraster.RI  <- raster::overlay(outraster.RI, mask, fun = function(x, y){ifelse(is.na(y), NA, x)})}
       if(!is.null(mask.by.thres)){outraster.RI  <- raster::calc(outraster.RI, fun = function(x){ifelse(x >= mask.by.thres, NA, x)})}
 
 
-      # rgrass7::writeRAST(as(tmp.dif, 'SpatialGridDataFrame'), "tmp.dif",
-      #                    zcol = names(tmp.dif), useGDAL = TRUE, flags = c("overwrite"))
-      #
-      # rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
-      #   input = "tmp.dif", output = "tmp.dif.stddev", method = "stddev", size = size))
+      rgrass7::writeRAST(as(tmp.dif, 'SpatialGridDataFrame'), "tmp.dif",
+                         zcol = names(tmp.dif), useGDAL = TRUE, flags = c("overwrite"))
+
+      rgrass7::execGRASS("r.neighbors", flags = c("quiet", "overwrite"), parameters = list(
+        input = "tmp.dif", output = "tmp.dif.stddev", method = "stddev", size = size))
 
       # outraster.RI  <- raster::raster(rgrass7::readRAST("tmp.dif.stddev", close_OK = FALSE))  # get data from GRASS GIS
       # projection(outraster.RI) <- projection(elevation.Fun)

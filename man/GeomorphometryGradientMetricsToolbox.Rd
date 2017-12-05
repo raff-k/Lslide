@@ -7,7 +7,10 @@
 GeomorphometryGradientMetricsToolbox(elevation, slope = NULL, aspect = NULL,
   tool = c("Linear Aspect", "Landfrom", "Mean Slope", "SEI", "RI"),
   params = params, zScale = "1.0", output.path = tempdir(),
-  quiet = TRUE)
+  use.link2GI = TRUE, defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2",
+  "OSGeo4W64"), initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2",
+  mask = NULL, mask.by.thres = NULL, NODATA = -99999,
+  load.ElevationIntoGRASS = TRUE, quiet = TRUE)
 }
 \arguments{
 \item{elevation}{\linkS4class{RasterLayer} with elevation data}
@@ -23,6 +26,18 @@ GeomorphometryGradientMetricsToolbox(elevation, slope = NULL, aspect = NULL,
 \item{zScale}{multiplicative factor to convert elevation units to horizontal units. Default: "1.0"}
 
 \item{output.path}{path to output folder. Default: tempdir()}
+
+\item{use.link2GI}{= TRUE}
+
+\item{defaultGrass}{GRASS GIS path to for initialisation using link2GI. Default: c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"),}
+
+\item{initGRASS.path}{GRASS GIS path for initialisation using rgrass7. Default: "C:/OSGeo4W64/apps/grass/grass-7.2.2"}
+
+\item{mask}{\linkS4class{RasterLayer} that serves as mask. Default: NULL}
+
+\item{mask.by.thres}{all values equal and higher than (>=) the threshold is masked. Default: NULL otherwhise numeric. TODO: flexible way to mask ranges or values smaller than.}
+
+\item{load.ElevationIntoGRASS}{write the elevation input into GRASS GIS. Default: TRUE}
 
 \item{quiet}{no outputs in console. Default: TRUE}
 }

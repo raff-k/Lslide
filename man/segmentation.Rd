@@ -88,6 +88,8 @@ segmentation(Tool, Segments.Grid, Segments.Poly, Input.Grid,
 
 \item{Grass.Segmentation.Minsize}{minsize of segment. Default: 15}
 
+\item{Grass.Segmentation.Memory}{memory to be used for segmentation. Default: 300}
+
 \item{Grass.Segmentation.Iterations}{amount of allowed iterations. Default: 50}
 
 \item{Grass.Segmentation.Seeds}{input of seeds raster. Enables bottom-up segmentation. Default: NULL}
@@ -135,8 +137,6 @@ segmentation(Tool, Segments.Grid, Segments.Poly, Input.Grid,
 \item{Grass.SLIC.Perturb}{Perturb initial super pixel centers. Percent of intitial superpixel radius. Default: 0, range: 0-100}
 
 \item{burn.Boundary.into.Segments}{vector specifing if boundary grid is burned into segmentation (1) or seeds (2). Default: FALSE, maximum length: 2}
-
-\item{Grass.Segmentation.Memor}{memory to be used for segmentation. Default: 300}
 }
 \description{
 This function uses the open-source software of GRASS and SAGA GIS

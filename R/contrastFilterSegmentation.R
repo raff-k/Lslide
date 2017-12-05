@@ -21,7 +21,7 @@
 #' @param writeCFRaster write contrast-filter results. Default: FALSE
 #' @param writeRaster.NAflag NoData values for NA values in raster. Default: -99999
 #' @param freeMemory free memory after contrast filtering. Default: TRUE
-#' @param SOOC show output of tools on console. Default: FALSE
+#' @param show.output.on.console show output of tools on console. Default: FALSE
 #' @param Fast.Representativeness.LevelOfGeneralisation level of generalisation for computing seed points. Default: "2.0"
 #' @param quiet do not show comments and process time in console. Default: TRUE
 #' @param Grass.Segmentation.Threshold threshold used of merging segments. Default: 0.24
@@ -49,7 +49,7 @@
 # input filter and input segmentation should have same extent and projection
 
 contrastFilterSegmentation <- function(input.filter, input.segmentation = input.filter, offset = 0.06, makeBrush.size = 25, makeBrush.shape = "disc", NA.val.in = 0, clump.thresh = NULL, clump.directions = 8, env.rsaga = RSAGA::rsaga.env(),
-                                       CFR.buf = "1", output.path = tempdir(), writeCFRaster = FALSE, writeRaster.NAflag = -99999, freeMemory = TRUE, SOOC = FALSE, quiet = TRUE,
+                                       CFR.buf = 1, output.path = tempdir(), writeCFRaster = FALSE, writeRaster.NAflag = -99999, freeMemory = TRUE, show.output.on.console = FALSE, quiet = TRUE,
                                        Grass.Segmentation.Threshold = 0.24, Grass.Segmentation.Minsize = 0, Grass.Segmentation.Memory = 1024, Segments.Poly =  paste0(tempdir(), "/", "outSegPoly.shp"),   Segments.Grid = paste0(tempdir(), "/", "outSegGrid.sgrd"),
                                        defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"), load.output = FALSE, ...)
 {
@@ -160,14 +160,48 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
 
     # rsaga.get.modules("grid_tools", env = env.rsaga)
     # rsaga.get.usage("grid_tools", 8, env = env.rsaga)
-    gsm.output.path <- paste0(tempdir(), "/", "tmpGsmOut.sgrd")
-    gsm.buf.path <- paste0(tempdir(),"/", "tmpBuf.sgrd")
-    writeRaster(x = gsm.output, filename = gsm.output.path, overwrite = TRUE, NAflag = writeRaster.NAflag)
 
-    RSAGA::rsaga.geoprocessor(lib="grid_tools", module = 8, env = env.rsaga, show.output.on.console = SOOC, param = list(
-      FEATURES = gsm.output.path, BUFFER = gsm.buf.path, DIST = CFR.buf, BUFFERTYPE = "1"))
+    # RSAGA::rsaga.geoprocessor(lib = "io_gdal", module = 1, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+    #   GRIDS = Segments.Grid.tmp, FILE =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), FORMAT =  "43"))
 
-    gsm.output <- raster::raster(gsm.output.path)
+
+    # raster::writeRaster(x = raster::raster(Segments.Grid.tmp), filename = paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"),
+    #                     overwrite = TRUE)
+
+   #  browser()
+#
+#     gsm.output.path <- paste0(tempdir(), "/", "tmpGsmOut.sgrd")
+#     gsm.buf.path <- paste0(tempdir(),"/", "tmpBuf.sgrd")
+#     # gsm.buf.path <- paste0(tempdir(),"/", "tmpBuf.tif")
+    # gsm.output.path <- paste0(tempdir(), "/", "tmpGsmOut.tif")
+    # browser()
+    # raster::writeRaster(x = gsm.output, filename = gsm.output.path, overwrite = TRUE, NAflag = writeRaster.NAflag)
+    # rgdal::writeGDAL(dataset = as(gsm.output, "SpatialGridDataFrame"), fname = paste0(tools::file_path_sans_ext(gsm.output.path), ".sdat"),
+    #                   drivername = "SAGA")
+
+
+    # RSAGA::rsaga.geoprocessor(lib="grid_tools", module = 8, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+    #   FEATURES = gsm.output.path, BUFFER = gsm.buf.path, DIST = CFR.buf, BUFFERTYPE = "1"))
+
+    # RSAGA::rsaga.geoprocessor(lib="grid_tools", module = 8, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+    #   FEATURES = gsm.output.path, BUFFER = gsm.buf.path, DISTANCE = CFR.buf, TYPE = "1"))
+
+    gsm.buf.path <- paste0(tempdir(),"/", "tmpBuf.tif")
+
+    rgrass7::writeRAST(x = as(gsm.output, "SpatialGridDataFrame"), vname = "tmpGsm", zcol = names(gsm.output),
+                       overwrite = TRUE, flags = 'quiet')
+
+    # print(rgrass7::parseGRASS("r.buffer"))
+    rgrass7::execGRASS("r.buffer", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = "tmpGsm", output = "tmpGsmBuf", distances = CFR.buf))
+
+
+    rgrass7::execGRASS("r.out.gdal", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = "tmpGsmBuf", type = "Int32", output = gsm.buf.path, format = "GTiff",
+      nodata =  writeRaster.NAflag))
+
+
+    gsm.output <- raster::raster(gsm.buf.path)
   }
 
   # mask segmentation input to filter
@@ -184,10 +218,10 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
 
 
 
-  tryCatch({invisible(link2GI::linkGRASS7(x = input.segmentation, defaultGrass = defaultGrass))},
-           error = function(e) {
-    stop("Something wrong with the initialisation of GRASS GIS: ", e)
-  })
+  # tryCatch({invisible(link2GI::linkGRASS7(x = input.segmentation, defaultGrass = defaultGrass))},
+  #          error = function(e) {
+  #   stop("Something wrong with the initialisation of GRASS GIS: ", e)
+  # })
 
 
   # load data into GRASS
@@ -196,21 +230,44 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
 
 
   # create an imagery group
-  rgrass7::execGRASS("i.group", flags = c("quiet"), Sys_show.output.on.console = SOOC, parameters = list(
+  rgrass7::execGRASS("i.group", flags = c("quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
     group = "GRASS.Segmentation.Group", input = "inputGrass"))
 
   # start segmentation
   # print(parseGRASS("i.segment"))
   rgrass7::execGRASS("i.segment", group = "GRASS.Segmentation.Group", output = "output.segmentation.GRASS", threshold = Grass.Segmentation.Threshold,
-                     memory = Grass.Segmentation.Memory, minsize = Grass.Segmentation.Minsize, Sys_show.output.on.console = SOOC)
+                     memory = Grass.Segmentation.Memory, minsize = Grass.Segmentation.Minsize, Sys_show.output.on.console = show.output.on.console)
 
 
   # get data from GRASS
   # print(parseGRASS("r.out.gdal"))
-  rgrass7::execGRASS("r.out.gdal", flags = c("overwrite"), Sys_show.output.on.console = SOOC, parameters = list(
-                       input = "output.segmentation.GRASS", type = "Int32", output =  paste0(tools::file_path_sans_ext(Segments.Grid), ".tif"), format = "GTiff",
-                       nodata =  writeRaster.NAflag))
+  if(tools::file_ext(Segments.Grid) == "sgrd")
+  {
+   Segments.Grid.tmp <- paste0(tempdir(), "/", tools::file_path_sans_ext(basename(Segments.Grid)), ".tif")
 
+    rgrass7::execGRASS("r.out.gdal", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = "output.segmentation.GRASS", type = "Int32", output =  Segments.Grid.tmp, format = "GTiff",
+      nodata =  writeRaster.NAflag))
+
+    # rgrass7::execGRASS("r.out.gdal", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+    #   input = "output.segmentation.GRASS", type = "Int32", output =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), format = "SAGA",
+    #   nodata =  writeRaster.NAflag))
+
+
+
+    RSAGA::rsaga.geoprocessor(lib = "io_gdal", module = 1, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+      GRIDS = Segments.Grid.tmp, FILE =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), FORMAT =  "43"))
+
+#
+#     raster::writeRaster(x = raster::raster(Segments.Grid.tmp), filename = paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"),
+#                         overwrite = TRUE)
+
+  } else {
+
+    rgrass7::execGRASS("r.out.gdal", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = "output.segmentation.GRASS", type = "Int32", output =  paste0(tools::file_path_sans_ext(Segments.Grid), ".tif"), format = "GTiff",
+      nodata =  writeRaster.NAflag))
+    }
 
 
   # Output.Seeds <- paste0(tempdir(),"/", "tmpSeeds.sgrd")
@@ -238,7 +295,7 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
   # rsaga.get.modules("statistics_grid", env = env.rsaga)
   # rsaga.get.usage("statistics_grid", 0, env = env.rsaga)
   # SAGA SEEDS NOT WORKING!
-  # rsaga.geoprocessor(lib="statistics_grid", module = 0, env = env.rsaga, show.output.on.console = SOOC, param = list(
+  # rsaga.geoprocessor(lib="statistics_grid", module = 0, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
   #   INPUT = Input.Grid, RESULT = paste0(tempdir(),"/", "tmpResultFR"), RESULT_LOD = paste0(tempdir(),"/", "tmpLod"), SEEDS = Output.Seeds,
   #   LOD = Fast.Representativeness.LevelOfGeneralisation))
 
@@ -248,7 +305,7 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
   # grid tools - grid masking
   # rsaga.get.modules("grid_tools", env = env.rsaga)
   # rsaga.get.usage("grid_tools", 24, env = env.rsaga)
-  # rsaga.geoprocessor(lib = "grid_tools", module = 24, env = env.rsaga, show.output.on.console = SOOC, param = list(
+  # rsaga.geoprocessor(lib = "grid_tools", module = 24, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
   #   GRID = Output.Seeds, MASK = Input.Grid, MASKED = Output.Seeds.Masked))
 
 
@@ -256,7 +313,7 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
   # if(quiet == FALSE) cat("... SAGA: Seeded Region Growing\n")
   # rsaga.get.modules("imagery_segmentation", env = env.rsaga)
   # rsaga.get.usage("imagery_segmentation", 3, env = env.rsaga)
-   # SRG <- rsaga.geoprocessor(lib = "imagery_segmentation", module = 3, env = env.rsaga, show.output.on.console = SOOC, param = list(
+   # SRG <- rsaga.geoprocessor(lib = "imagery_segmentation", module = 3, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
    #    SEEDS = Output.Seeds.Masked, FEATURES = Input.Grid, SIG_2 = Saga.Segmentation.Sig.2, SEGMENTS = Segments.Grid,
    #       LEAFSIZE = Saga.Segmentation.Leafsize))
 
@@ -270,23 +327,32 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
   # grid tools - grid masking
   # rsaga.get.modules("grid_tools", env = env.rsaga)
   # rsaga.get.usage("grid_tools", 24, env = env.rsaga)
-  # rsaga.geoprocessor(lib = "grid_tools", module = 24, env = env.rsaga, show.output.on.console = SOOC, param = list(
+  # rsaga.geoprocessor(lib = "grid_tools", module = 24, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
   #   GRID = Segments.Grid, MASK = Input.Grid, MASKED = Segments.Grid))
 
 
   # vectorising grid classes
-  if(quiet == FALSE) cat("... SAGA: Vectorising Grid Classes\n")
+  if(quiet == FALSE) cat("... GRASS: Vectorising Grid Classes\n")
   # shapes_grid
   # rsaga.get.modules("shapes_grid", env = env.rsaga)
   # rsaga.get.usage("shapes_grid", 6, env = env.rsaga)
-  RSAGA::rsaga.geoprocessor(lib = "shapes_grid", module = 6, env = env.rsaga, show.output.on.console = SOOC, param = list(
-    GRID = paste0(tools::file_path_sans_ext(Segments.Grid), ".tif"), POLYGONS =  Segments.Poly))
+  # RSAGA::rsaga.geoprocessor(lib = "shapes_grid", module = 6, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+  #   GRID = paste0(tools::file_path_sans_ext(Segments.Grid), ".tif"), POLYGONS =  Segments.Poly))
+  # print(parseGRASS("r.to.vect"))
+  rgrass7::execGRASS("r.to.vect", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+    input = "output.segmentation.GRASS", output = "Segments_Poly", type = "area"))
+
+
+  # print(parseGRASS("v.out.ogr"))
+  rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+    input = "Segments_Poly", output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
+
 
 
   if(load.output == TRUE)
   {
     if(quiet == FALSE) cat("... Loading Segments: Using sf::() and conversion to SpatialPolygonsDataFrame\n")
-    outpoly <- sf::st_read(Segments.Poly, quiet = !SOOC)
+    outpoly <- sf::st_read(Segments.Poly, quiet = !show.output.on.console)
     outpoly <- as(outpoly, "Spatial")
 
     if(is.na(sp::proj4string(outpoly)))
@@ -325,7 +391,7 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
 #
 #
 # # ------ Run of contrastFilterSegmentation: 9.63516666666667 Minutes ------
-# segments <- contrastFilterSegmentation(input.filter = slope, makeBrush.size = 25, offset = 0.07, env.rsaga = env.rsaga, SOOC = FALSE, quiet = FALSE,
+# segments <- contrastFilterSegmentation(input.filter = slope, makeBrush.size = 25, offset = 0.07, env.rsaga = env.rsaga, show.output.on.console = FALSE, quiet = FALSE,
 #                                        Grass.Segmentation.Threshold =  0.02, Grass.Segmentation.Minsize = 50, clump.directions = 4, clump.thresh = 50, freeMemory = TRUE,
 #                                        Segments.Poly = paste0(getwd(), "/Output/cFS_Mb25Of007_ClD4T50_SgT002Sz50.shp"), Segments.Grid = paste0(getwd(), "/Output/cFS_Mb25Of007_ClD4T50_SgT002Sz50.sgrd"))
 #
@@ -338,7 +404,7 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
 # input.filter = slope
 # makeBrush.size = 25
 # env.rsaga = env.rsaga
-# SOOC = FALSE
+# show.output.on.console = FALSE
 # quiet = FALSE
 # input.segmentation = input.filter
 # offset = 0.07

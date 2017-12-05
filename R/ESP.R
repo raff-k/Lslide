@@ -4,9 +4,13 @@
 #' segmentation scales by calculating, at first, the local variance for every segmented images
 #' and then by comparing the results of different segmentation levels (ROC-LV).
 #'
+#' @param Tool open-source software to compute segmentation analysis. GRASS or SAGA
+#' @param Segments.Poly ...
 #' @param Scale.Input.Grid input grid for computing segmentation scale parameters
 #' @param Scale.Input.Grid.Cell.Size cell size of input grid. Default: "1"
 #' @param Scale.Statistic.Min.Size min size of area/polygon which is included in statistics (usefull for SAGA GIS segmentations). Default: "0"
+#' @param Seed.Method ""
+#' @param env ...
 #' @param ESP.save save estimations of function. Default: FALSE
 #' @param ESP.save.path path where estimations are stored. Default: input path of \emph{segment.poly}
 #' @param Scales containing scale parameters for loop-segmentation
@@ -35,8 +39,8 @@
 #'
 #'
 #' @export
-ESP <- function(Scale.Input.Grid, Scale.Input.Grid.Cell.Size = "1", Scale.Statistic.Min.Size  = "0", ESP.save = FALSE, ESP.save.path = NULL, Count = "1", Min = "0", Max = "0", Range = "0", Sum = "0", Mean = "0",
-                Var = "0", Stddev = "1", Quantile = 0, Scales, Grass.ESP.Method = "Threshold", ...)
+ESP <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Size = "1", Scale.Statistic.Min.Size  = "0", ESP.save = FALSE, ESP.save.path = NULL, Count = "1", Min = "0", Max = "0", Range = "0", Sum = "0", Mean = "0",
+                Var = "0", Stddev = "1", Quantile = 0, Scales, Grass.ESP.Method = "Threshold", Segments.Poly, Seed.Method = "", ...)
 {
 
 
@@ -69,8 +73,8 @@ ESP <- function(Scale.Input.Grid, Scale.Input.Grid.Cell.Size = "1", Scale.Statis
 
 
     print(paste0("Level of Generalisation|Threshold|Minsize: ", i))
-    segments.poly <- paste0(file_path_sans_ext(Segments.Poly) , (i*multiplier),".", file_ext(Segments.Poly))
-    # segments.scale.statistic <- paste0(file_path_sans_ext(segments.poly) , "_scaleStat.", file_ext(segments.poly))
+    segments.poly <- paste0(tools::file_path_sans_ext(Segments.Poly) , (i*multiplier),".", tools::file_ext(Segments.Poly))
+    # segments.scale.statistic <- paste0(tools::file_path_sans_ext(segments.poly) , "_scaleStat.", tools::file_ext(segments.poly))
     segments.scale.statistic <- segments.poly # update after changed dbf header
 
 
@@ -113,9 +117,9 @@ ESP <- function(Scale.Input.Grid, Scale.Input.Grid.Cell.Size = "1", Scale.Statis
 
     # read statistic dbf
     print("Extraction for Estimate Scale Parameters")
-    stat <- suppressMessages(read.dbf(paste0(file_path_sans_ext(segments.scale.statistic), ".dbf")))
+    stat <- suppressMessages(read.dbf(paste0(tools::file_path_sans_ext(segments.scale.statistic), ".dbf")))
     colnames(stat$dbf) <- c("segments_g", "ID", "NAME", "Cell_Count", "Stddev")
-    write.dbf(stat, paste0(file_path_sans_ext(segments.scale.statistic), ".dbf")) # write dbf with better header
+    write.dbf(stat, paste0(tools::file_path_sans_ext(segments.scale.statistic), ".dbf")) # write dbf with better header
 
     ### calculation of weighted mean for that little region get less influcence
     stat$dbf <- stat$dbf[stat$dbf$Cell_Count > (as.numeric(Scale.Statistic.Min.Size) * as.numeric(Scale.Input.Grid.Cell.Size)),]
