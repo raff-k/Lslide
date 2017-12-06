@@ -47,7 +47,7 @@
 #' @export
 Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Size = "1", Scale.Statistic.Min.Size = "0", Objective.Function.save = FALSE, Objective.Function.save.path = NULL, Count = "1", Min = "0", Max = "0", Range = "0", Sum = "0", Mean = "1", Var = "1", Stddev = "0", Objective.Function.save.name = "",
                                Objective.Function.Mean.Segmentation.Grid = paste0(tmp.path, "Objective.Function.Mean.Segmentation.Grid.sgrd"), Objective.Function.Count.Grid = paste0(tmp.path, "Objective.Function.Count.Grid.sgrd"), Objective.Function.MoransI = paste0(tmp.path, "Objective.Function.MoransI.txt"),
-                               Quantile = 0, Scales, Grass.Objective.Function.Method = "Threshold", Segments.Poly, Grass.Segmentation.Minsize = NA, Grass.Segmentation.Threshold = NA, Seed.Method = "", env = RSAGA::rsaga.env(), show.output.on.console = FALSE, ...)
+                               Quantile = 0, Scales, Grass.Objective.Function.Method = "Threshold", Segments.Poly, Grass.Segmentation.Minsize = NA, Grass.Segmentation.Threshold = NA, Seed.Method = "", env = RSAGA::rsaga.env(), show.output.on.console = FALSE, quiet = TRUE, ...)
 {
 
   # browser()
@@ -107,7 +107,7 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
     {
       segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
                    Fast.Representativeness.LevelOfGeneralisation = i, Seed.Generation.Scale = as.character(i),
-                   show.output.on.console = show.output.on.console, ...)
+                   show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, quiet = quiet, ...)
     } else if(Tool == "GRASS")
     {
       if(Grass.Objective.Function.Method == "Threshold")
@@ -115,21 +115,21 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
         # browser()
         segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
                      Grass.Segmentation.Threshold = as.character(i), Grass.Segmentation.Minsize = Grass.Segmentation.Minsize,
-                     show.output.on.console = show.output.on.console, ...)
+                     show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, quiet = quiet, ...)
       }
 
       if(Grass.Objective.Function.Method == "Minsize")
       {
         segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
-                     Grass.Segmentation.Minsize = i, show.output.on.console = show.output.on.console,
-                     Grass.Segmentation.Threshold = Grass.Segmentation.Threshold,...)
+                     Grass.Segmentation.Minsize = i, show.output.on.console = show.output.on.console, quiet = quiet,
+                     Grass.Segmentation.Threshold = Grass.Segmentation.Threshold, estimateScaleParameter = TRUE, ...)
       }
 
       if(Grass.Objective.Function.Method == "Seeds")
       {
         segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
                      Fast.Representativeness.LevelOfGeneralisation = i, Seed.Generation.Scale = as.character(i),
-                     show.output.on.console = show.output.on.console,
+                     show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, quiet = quiet,
                      Grass.Segmentation.Minsize = Grass.Segmentation.Minsize, Grass.Segmentation.Threshold = Grass.Segmentation.Threshold, ...)
 
       }
@@ -138,19 +138,17 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
     {
       if(Grass.Objective.Function.Method == "Compactness")
       {
-        segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
-                     Grass.SLIC.Compactness = i, show.output.on.console = show.output.on.console, ...)
+        segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env, quiet = quiet,
+                     Grass.SLIC.Compactness = i, show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, ...)
       }
 
       if(Grass.Objective.Function.Method == "Superpixels")
       {
-        segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
-                     Grass.SLIC.Superpixels = i, show.output.on.console = show.output.on.console, ...)
+        segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env, quiet = quiet,
+                     Grass.SLIC.Superpixels = i, show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, ...)
       }
 
     }
-
-    # browser()
 
     # Grid Statistics -----------------------------------------------------------------------
     # calculate grid statistics
@@ -170,29 +168,65 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
     #   #   GRIDS = Segments.Grid.tmp.path, FILE =  paste0(tools::file_path_sans_ext(Segments.Grid.tmp.path), ".sdat"), FORMAT =  "42")
     # }
 
-   # browser()
+    # browser()
 
-    # print("Calculate Grid Statistics")
-    RSAGA::rsaga.geoprocessor(lib="shapes_grid", module = 2, env = env, show.output.on.console = show.output.on.console, param = list(
-      GRIDS = Scale.Input.Grid, POLYGONS = segments.poly, METHOD = "0", NAMING = 1, RESULT = segments.scale.statistic,
-      COUNT = Count, MIN = Min, MAX = Max, RANGE = Range, SUM = Sum, MEAN = Mean, VAR = Var, STDDEV = Stddev, QUANTILE = Quantile))
+     print("Calculate Grid Statistics for Polygons")
+
+    # RSAGA::rsaga.geoprocessor(lib="shapes_grid", module = 2, env = env, show.output.on.console = show.output.on.console, param = list(
+    #   GRIDS = Scale.Input.Grid, POLYGONS = segments.poly, METHOD = "0", NAMING = 1, RESULT = segments.scale.statistic,
+    #   COUNT = Count, MIN = Min, MAX = Max, RANGE = Range, SUM = Sum, MEAN = Mean, VAR = Var, STDDEV = Stddev, QUANTILE = Quantile))
+
+
+    if(i == Scales[1])
+    {
+      Scale.Input.Grid.r <- raster::raster(Scale.Input.Grid)
+      rgrass7::writeRAST(x =  as(Scale.Input.Grid.r, "SpatialGridDataFrame"),
+                         vname =  "ScaleGrid", zcol = names(Scale.Input.Grid.r), overwrite = TRUE)
+    }
+
+    # can take a long while
+    # print(parseGRASS("v.rast.stats"))
+    if(quiet == FALSE)
+    {
+      flags.VRS <- c("verbose", "c")
+    } else {
+      flags.VRS <- c("quiet", "c")
+    }
+    # browser()
+
+    rgrass7::execGRASS("v.rast.stats", flags = flags.VRS, parameters = list(
+      map = "Segments_Poly", raster = "ScaleGrid", column_prefix = "s", method = "number,average,variance"))
+
+
+    # print(parseGRASS("v.out.ogr"))
+    rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = "Segments_Poly", output = segments.scale.statistic, type = "area", format = "ESRI_Shapefile"))
+
 
     # read statistic dbf
     print("Extraction for Objective Function Parameter")
     # get start time of process
     process.time.start.extraction <- proc.time()
 
-    stat <- suppressMessages(read.dbf(paste0(tools::file_path_sans_ext(segments.scale.statistic), ".dbf")))    # last: variance | last - 1: mean | last - 2: cell count
-    colnames(stat$dbf) <- c("cat", "value", "Cell_Count", "Mean", "Variance")
-    write.dbf(stat, paste0(tools::file_path_sans_ext(segments.scale.statistic), ".dbf")) # write dbf with better header
+    segments.scale.statistic.sf <-  sf::st_read(dsn = file.path(getwd(), dirname(segments.scale.statistic)),
+                                                layer = tools::file_path_sans_ext(basename(segments.scale.statistic)),
+                                                stringsAsFactors = FALSE, quiet = quiet) # simple feature object, sf package
+
+
+    # stat <- suppressMessages(read.dbf(paste0(tools::file_path_sans_ext(segments.scale.statistic), ".dbf")))    # last: variance | last - 1: mean | last - 2: cell count
+    # colnames(stat$dbf) <- c("cat", "value", "Cell_Count", "Mean", "Variance")
+    # write.dbf(stat, paste0(tools::file_path_sans_ext(segments.scale.statistic), ".dbf")) # write dbf with better header
 
 
     # Calculation of intrasegment Variance and Morans I -----------------------------------------------------------------------
     ### calculation of intrasegment variance
     print("... Calculation of Intrasegment Variance")
-    stat$dbf <- stat$dbf[stat$dbf$Cell_Count > (as.numeric(Scale.Statistic.Min.Size) * as.numeric(Scale.Input.Grid.Cell.Size)),]
-    stat.intrasegment.variance <- weighted.mean(stat$dbf[[ncol(stat$dbf)]], stat$dbf[[ncol(stat$dbf)-2]] * as.numeric(Scale.Input.Grid.Cell.Size), na.rm = TRUE) # weighted mean of variance by area
+    # stat$dbf <- stat$dbf[stat$dbf$Cell_Count > (as.numeric(Scale.Statistic.Min.Size) * as.numeric(Scale.Input.Grid.Cell.Size)),]
+    # stat.intrasegment.variance <- weighted.mean(stat$dbf[[ncol(stat$dbf)]], stat$dbf[[ncol(stat$dbf)-2]] * as.numeric(Scale.Input.Grid.Cell.Size), na.rm = TRUE) # weighted mean of variance by area
+    var.sub.sf <- segments.scale.statistic.sf[segments.scale.statistic.sf$s_number > (as.numeric(Scale.Statistic.Min.Size) * as.numeric(Scale.Input.Grid.Cell.Size)), ]
+    stat.intrasegment.variance <- stats::weighted.mean(var.sub.sf$s_variance, var.sub.sf$s_number * as.numeric(Scale.Input.Grid.Cell.Size), na.rm = TRUE) # weighted mean of variance by area
 
+   # browser()
 
     ### calculation of Moran's I - speed up by sf-package
     # checked agains ArcGIS Spatial Autocorrelation Morans I (Contiguity_edges_corners) - similar results
@@ -200,24 +234,24 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
     print("... Calculation of Morans'I")
     # moransI.shape <- readOGR(dsn = dirname(segments.scale.statistic), layer = tools::file_path_sans_ext(basename(segments.scale.statistic)), verbose = FALSE)
     # moransI.queen.nb <-poly2nb(moransI.shape) # create contiguity queen neughbours by Waller & Gotway
-    moransI.shape_sf <- sf::st_read(dsn = paste0(getwd(), "/", dirname(segments.scale.statistic)),
-                                    layer = tools::file_path_sans_ext(basename(segments.scale.statistic)),
-                                    stringsAsFactors = FALSE, quiet = TRUE) # simple feature object, sf package
+    # moransI.shape_sf <- sf::st_read(dsn = paste0(getwd(), "/", dirname(segments.scale.statistic)),
+    #                                 layer = tools::file_path_sans_ext(basename(segments.scale.statistic)),
+    #                                 stringsAsFactors = FALSE, quiet = TRUE) # simple feature object, sf package
 
-    moransI.shape <- as(moransI.shape_sf, "Spatial") # convert simple feature to spatialobjectdataframe
+    moransI.shape <- as(segments.scale.statistic.sf, "Spatial") # convert simple feature to spatialobjectdataframe
     poly2_nb_speed_up <- rgeos::gUnarySTRtreeQuery(moransI.shape) # speed up function for poly2nb
     moransI.queen.nb <-spdep::poly2nb(moransI.shape, foundInBox = poly2_nb_speed_up) # create contiguity queen neughbours by Waller & Gotway
 
     # get out NA's, set them to 0
-    if(any(is.na(moransI.shape$Mean)))
+    if(any(is.na(moransI.shape$s_average)))
     {
-      moransI.shape$Mean[is.na(moransI.shape$Mean)] <- 0
+      moransI.shape$s_average[is.na(moransI.shape$s_average)] <- 0
     }
 
-
+    # browser()
     ## relating to Espindola et al. 2006 all neighbours get weights of 1 - binary weights
     moransI.weights.binary <- spdep::nb2listw(moransI.queen.nb, style = "B", zero.policy = TRUE) # those with many neighbours are up-weighted compared to those with few
-    moransI <- spdep::moran.test(x = moransI.shape$Mean, listw = moransI.weights.binary, zero.policy = TRUE, randomisation = TRUE, na.action = na.pass) # global Moran's I, if NA is there -> 0 weight
+    moransI <- spdep::moran.test(x = moransI.shape$s_average, listw = moransI.weights.binary, zero.policy = TRUE, randomisation = TRUE, na.action = na.pass) # global Moran's I, if NA is there -> 0 weight
 
     process.time.run.extraction <- proc.time() - process.time.start.extraction
     print(paste0("------ Run of Extraction for Objective Function Parametern: " , process.time.run.extraction["elapsed"][[1]]/60, " Minutes ------"))

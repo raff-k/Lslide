@@ -62,7 +62,7 @@
 #' @param Grass.SLIC.Memory memory in MB. Default: 300
 #' @param Grass.SLIC.Perturb Perturb initial super pixel centers. Percent of intitial superpixel radius. Default: 0, range: 0-100
 #' @param burn.Boundary.into.Segments vector specifing if boundary grid is burned into segmentation (1) or seeds (2). Default: FALSE, maximum length: 2
-#'
+#' @param estimateScaleParameter must be only be TRUE when scale parameter function is used. Default: FALSE
 #'
 #' @keywords segmentation, region growing, superpixels Simple Linear Iterative Clustering
 #'
@@ -74,7 +74,8 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
                          Grass.Segmentation.Threshold = NULL, Grass.Segmentation.Weighted = FALSE, Grass.Segmentation.Method = "region_growing", Grass.Segmentation.Similarity = "euclidean", Grass.Segmentation.Minsize = 15, Grass.Segmentation.Memory = 300, Grass.Segmentation.Iterations = 50, Grass.Segmentation.Seeds = NULL, Grass.Segmentation.Neighbourhood = "0",
                          Segmentation.Boundary.Grid = NULL,  Grass.Segmentation.Goodness = "Grass.Segmentation.Goodness", AllVertices = "FALSE", NoData = FALSE, Mask = NULL, show.output.on.console = FALSE, Seed.Method = "", Seed.Generation.Variance =  paste0( segmentation.tmp.path, "SeedGenerationVariance.sgrd"), Seed.Generation.Points =  paste0(segmentation.tmp.path, "SeedGenerationPoints.shp"),
                          Seed.Generation.Type = "0", Seed.Generation.Scale = "10.0", Generalisation.Flac = FALSE, Generalization.Mode = "1", Generalization.Radius = "1", Generalization.Threshold = "0.0", env = RSAGA::rsaga.env(),
-                         Grass.SLIC.Iter = 10, Grass.SLIC.Superpixels = 200, Grass.SLIC.Step = 0, Grass.SLIC.Compactness = 1.0, Grass.SLIC.Superpixels.MinSize = 1, Grass.SLIC.Memory = 300, Grass.SLIC.Perturb = 0, burn.Boundary.into.Segments = FALSE, ...)
+                         Grass.SLIC.Iter = 10, Grass.SLIC.Superpixels = 200, Grass.SLIC.Step = 0, Grass.SLIC.Compactness = 1.0, Grass.SLIC.Superpixels.MinSize = 1, Grass.SLIC.Memory = 300, Grass.SLIC.Perturb = 0, burn.Boundary.into.Segments = FALSE,
+                         estimateScaleParameter = FALSE, ...)
 {
 
  # browser()
@@ -634,9 +635,13 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
   rgrass7::execGRASS("r.to.vect", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
     input = "Segments.Grid.tmp", output = "Segments_Poly", type = "area"))
 
-  # print(parseGRASS("v.out.ogr"))
-  rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-    input = "Segments_Poly", output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
+  if(estimateScaleParameter == FALSE)
+  {
+    # print(parseGRASS("v.out.ogr"))
+    rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = "Segments_Poly", output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
+
+  }
 
 
 
