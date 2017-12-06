@@ -13,6 +13,7 @@
 #' @param makeBrush.size matrix size for smoothing input.filter. Default: 25
 #' @param makeBrush.shape form of smoothin matrix. Default: "disc"
 #' @param NA.val.in replace value for no data (NA) in \emph{input.filter}. Default: 0
+#' @param fill.holes polygon segmentation output contains holes. Default: FALSE
 #' @param clump.thresh area thresholds for removing clumbs - measured in cell sizes. Default: NULL
 #' @param clump.directions directions for "clump-searching". Default: 8
 #' @param env.rsaga environment of SAGA GIS. Default: RSAGA::rsaga.env()
@@ -51,7 +52,7 @@
 contrastFilterSegmentation <- function(input.filter, input.segmentation = input.filter, offset = 0.06, makeBrush.size = 25, makeBrush.shape = "disc", NA.val.in = 0, clump.thresh = NULL, clump.directions = 8, env.rsaga = RSAGA::rsaga.env(),
                                        CFR.buf = 1, output.path = tempdir(), writeCFRaster = FALSE, writeRaster.NAflag = -99999, freeMemory = TRUE, show.output.on.console = FALSE, quiet = TRUE,
                                        Grass.Segmentation.Threshold = 0.24, Grass.Segmentation.Minsize = 0, Grass.Segmentation.Memory = 1024, Segments.Poly =  paste0(tempdir(), "/", "outSegPoly.shp"),   Segments.Grid = paste0(tempdir(), "/", "outSegGrid.sgrd"),
-                                       defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"), load.output = FALSE, ...)
+                                       defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"), load.output = FALSE, fill.holes = FALSE, ...)
 {
 
   # browser()
@@ -344,8 +345,15 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
 
 
   # print(parseGRASS("v.out.ogr"))
-  rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-    input = "Segments_Poly", output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
+  # what to do with holes?
+  if(fill.holes)
+  {
+    rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = "Segments_Poly", output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
+  } else {
+    rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = "Segments_Poly", output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
+  }
 
 
 
