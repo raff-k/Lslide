@@ -236,7 +236,7 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
 
   # start segmentation
   # print(parseGRASS("i.segment"))
-  rgrass7::execGRASS("i.segment", group = "GRASS.Segmentation.Group", output = "output.segmentation.GRASS", threshold = Grass.Segmentation.Threshold,
+  rgrass7::execGRASS("i.segment", group = "GRASS.Segmentation.Group", flags = c("overwrite"), output = "output.segmentation.GRASS", threshold = Grass.Segmentation.Threshold,
                      memory = Grass.Segmentation.Memory, minsize = Grass.Segmentation.Minsize, Sys_show.output.on.console = show.output.on.console)
 
 
