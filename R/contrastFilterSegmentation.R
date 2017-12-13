@@ -49,8 +49,8 @@
 #' @export
 # input filter and input segmentation should have same extent and projection
 
-contrastFilterSegmentation <- function(input.filter, input.segmentation = input.filter, offset = 0.06, makeBrush.size = 25, makeBrush.shape = "disc", NA.val.in = 0, clump.thresh = NULL, clump.directions = 8, env.rsaga = RSAGA::rsaga.env(),
-                                       CFR.buf = 1, output.path = tempdir(), writeCFRaster = FALSE, writeRaster.NAflag = -99999, freeMemory = TRUE, show.output.on.console = FALSE, quiet = TRUE,
+contrastFilterSegmentation <- function(input.filter, input.segmentation = input.filter, offset = 0.06, makeBrush.size = 25, makeBrush.shape = "disc", NA.val.in = 0, clump.thresh = NULL, clump.directions = 4, env.rsaga = RSAGA::rsaga.env(),
+                                       CFR.buf = 1, output.path = tempdir(), writeCFRaster = FALSE, writeRaster.NAflag = -99999, freeMemory = TRUE, show.output.on.console = FALSE, quiet = TRUE, morph.Closing = TRUE, closing.size = 3, closing.shape = "box",
                                        Grass.Segmentation.Threshold = 0.24, Grass.Segmentation.Minsize = 0, Grass.Segmentation.Memory = 1024, Segments.Poly =  paste0(tempdir(), "/", "outSegPoly.shp"),   Segments.Grid = paste0(tempdir(), "/", "outSegGrid.sgrd"),
                                        defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"), load.output = FALSE, fill.holes = FALSE, ...)
 {
@@ -78,7 +78,7 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
   if(quiet == FALSE) cat("... conversion of filter matrix and grey-scale-matrix to raster\n")
   gsm <- raster::raster(gsm)
   extent(gsm) <- extent(input.filter)
-  # projection(gsm) <- projection(iinput.filter)
+  # projection(gsm) <- projection(input.filter)
 
   gsm.output <- raster::raster(gsm.output)
   extent(gsm.output) <- extent(input.filter)
@@ -117,6 +117,19 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
     rm(excludeVal, clumpFreq, clumps)
 
   } # end if doing clump removal
+
+  # raster::writeRaster(x = gsm.output, filename = file.path(getwd(), "Segmentation", "Closing", "gsmOut.tif"), overwrite=TRUE)
+
+
+  if(morph.Closing)
+  {
+    gsm.output <- Lslide::convR2GSM(r = gsm.output, NA.val.in = NA)
+    if(quiet == FALSE) cat("... morphological filter: closing\n")
+    gsm.output <- EBImage::closing(x = gsm.output, kern = EBImage::makeBrush(closing.size, shape = closing.shape))
+    gsm.output <- raster::raster(gsm.output)
+    extent(gsm.output) <- extent(input.filter)
+  }
+
 
   # project raster
   projection(gsm.output) <- projection(input.filter)
@@ -204,6 +217,8 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
 
     gsm.output <- raster::raster(gsm.buf.path)
   }
+
+
 
   # mask segmentation input to filter
   if(quiet == FALSE) cat("... clip input for segmentation based on filter results\n")
