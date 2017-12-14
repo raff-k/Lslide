@@ -53,7 +53,6 @@ initGRASSWin <- function(x = NULL, osgeo4w.root = "C:\\OSGEO4W64", grass.version
                            paste0("C:\\", basename(osgeo4w.root), "\\apps\\Python27\\Scripts",";"),
                            paste0("C:\\", basename(osgeo4w.root), "\\bin",";"),
                            paste0("C:\\", basename(osgeo4w.root), "\\apps",";"),
-                           "C:\\OSGEO4~1\\apps\\saga",";",
                            paste0(Sys.getenv("WINDIR"),"/WBem"),";",
                            Sys.getenv("PATH")))
   }

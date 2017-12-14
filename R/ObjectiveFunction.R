@@ -12,7 +12,7 @@
 #' @param Grass.Segmentation.Minsize = NA,
 #' @param Grass.Segmentation.Threshold = NA
 #' @param Scale.Input.Grid input grid for computing segmentation scale parameters
-#' @param Scale.Input.Grid.Cell.Size cell size of input grid. Default: "1"
+#' @param Scale.Input.Grid.Cell.Size cell size of input grid. Default: prod(raster::res(raster::raster(slp.tif.path)))
 #' @param Scale.Statistic.Min.Size min size of area/polygon which is included in statistics (usefull for SAGA GIS segmentations). Default: "0"
 #' @param Objective.Function.save save estimations of function. Default: FALSE
 #' @param Objective.Function.save.path path where estimations are stored. Default: input path of \emph{segment.poly}
@@ -45,7 +45,7 @@
 #'
 #'
 #' @export
-Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Size = "1", Scale.Statistic.Min.Size = "0", Objective.Function.save = FALSE, Objective.Function.save.path = NULL, Count = "1", Min = "0", Max = "0", Range = "0", Sum = "0", Mean = "1", Var = "1", Stddev = "0", Objective.Function.save.name = "",
+Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Size = prod(raster::res(raster::raster(slp.tif.path))), Scale.Statistic.Min.Size = "0", Objective.Function.save = FALSE, Objective.Function.save.path = NULL, Count = "1", Min = "0", Max = "0", Range = "0", Sum = "0", Mean = "1", Var = "1", Stddev = "0", Objective.Function.save.name = "",
                                Objective.Function.Mean.Segmentation.Grid = paste0(tmp.path, "Objective.Function.Mean.Segmentation.Grid.sgrd"), Objective.Function.Count.Grid = paste0(tmp.path, "Objective.Function.Count.Grid.sgrd"), Objective.Function.MoransI = paste0(tmp.path, "Objective.Function.MoransI.txt"),
                                Quantile = 0, Scales, Grass.Objective.Function.Method = "Threshold", Segments.Poly, Grass.Segmentation.Minsize = NA, Grass.Segmentation.Threshold = NA, Seed.Method = "", env = RSAGA::rsaga.env(), show.output.on.console = FALSE, quiet = TRUE, ...)
 {
@@ -199,7 +199,7 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
 
 
     # print(parseGRASS("v.out.ogr"))
-    rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+    rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
       input = "Segments_Poly", output = segments.scale.statistic, type = "area", format = "ESRI_Shapefile"))
 
 
@@ -223,7 +223,7 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
     print("... Calculation of Intrasegment Variance")
     # stat$dbf <- stat$dbf[stat$dbf$Cell_Count > (as.numeric(Scale.Statistic.Min.Size) * as.numeric(Scale.Input.Grid.Cell.Size)),]
     # stat.intrasegment.variance <- weighted.mean(stat$dbf[[ncol(stat$dbf)]], stat$dbf[[ncol(stat$dbf)-2]] * as.numeric(Scale.Input.Grid.Cell.Size), na.rm = TRUE) # weighted mean of variance by area
-    var.sub.sf <- segments.scale.statistic.sf[segments.scale.statistic.sf$s_number > (as.numeric(Scale.Statistic.Min.Size) * as.numeric(Scale.Input.Grid.Cell.Size)), ]
+    var.sub.sf <- segments.scale.statistic.sf[segments.scale.statistic.sf$s_number > as.numeric(Scale.Statistic.Min.Size), ]
     stat.intrasegment.variance <- stats::weighted.mean(var.sub.sf$s_variance, var.sub.sf$s_number * as.numeric(Scale.Input.Grid.Cell.Size), na.rm = TRUE) # weighted mean of variance by area
 
    # browser()
@@ -301,8 +301,8 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
   # Final normalization for output -----------------------------------------------------------------------
   # Normalizing and Calculation of Objective Function by Camara et al. 2006 - Parameter Selection for
   # Region-Growing Image Segmentation Algorithms using Spatial Autocorrelation
-  df.Objective.Function$Normalized.Intrasegment.Variance <- (max(df.Objective.Function$Intrasegment.Variance) - df.Objective.Function$Intrasegment.Variance) / diff(range(df.Objective.Function$Intrasegment.Variance))
-  df.Objective.Function$Normalized.Morans.I <- (max(df.Objective.Function$Morans.I) - df.Objective.Function$Morans.I) / diff(range(df.Objective.Function$Morans.I))
+  df.Objective.Function$Normalized.Intrasegment.Variance <- (max(df.Objective.Function$Intrasegment.Variance, na.rm = TRUE) - df.Objective.Function$Intrasegment.Variance) / diff(range(df.Objective.Function$Intrasegment.Variance, na.rm = TRUE))
+  df.Objective.Function$Normalized.Morans.I <- (max(df.Objective.Function$Morans.I, na.rm = TRUE) - df.Objective.Function$Morans.I) / diff(range(df.Objective.Function$Morans.I, na.rm = TRUE))
 
 
   df.Objective.Function$Objective.Function <-  df.Objective.Function$Normalized.Intrasegment.Variance + df.Objective.Function$Normalized.Morans.I

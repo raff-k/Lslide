@@ -79,10 +79,10 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
                          Segmentation.Boundary.Grid = NULL,  Grass.Segmentation.Goodness = paste0("Grass.Segmentation.Goodness", par.i), AllVertices = "FALSE", NoData = FALSE, Mask = NULL, show.output.on.console = FALSE, Seed.Method = "", Seed.Generation.Variance =  paste0(tempdir(), paste0("SeedGenerationVariance", par.i, ".sgrd")), Seed.Generation.Points =  file.path(tempdir(), paste0("SeedGenerationPoints", par.i, ".shp")),
                          Seed.Generation.Type = "0", Seed.Generation.Scale = "10.0", Generalisation.Flac = FALSE, Generalization.Mode = "1", Generalization.Radius = "1", Generalization.Threshold = "0.0", env = RSAGA::rsaga.env(),
                          Grass.SLIC.Iter = 10, Grass.SLIC.Superpixels = 200, Grass.SLIC.Step = 0, Grass.SLIC.Compactness = 1.0, Grass.SLIC.Superpixels.MinSize = 1, Grass.SLIC.Memory = 300, Grass.SLIC.Perturb = 0, burn.Boundary.into.Segments = FALSE,
-                         estimateScaleParameter = FALSE, Mode.Filter.Flac = FALSE, Mode.Filter.Size = 3, Mode.Filter.Segment.MinSize = 3, par.i = "", ...)
+                         estimateScaleParameter = FALSE, Mode.Filter.Flac = FALSE, Mode.Filter.Size = 7, Mode.Filter.Segment.MinSize = 3, par.i = "", ...)
 {
 
-   # browser()
+  # browser()
 
   # get start time of process
   process.time.start <- proc.time()
@@ -159,10 +159,12 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
 
   # check par.i
-  if(par.i != "")
-  {
-    par.v <- gsub("[.]", "_", as.character(par.i))
-  }
+  # if(par.i != "")
+  # {
+  #   par.v <- gsub("[.]", "_", as.character(par.i))
+  # } else {
+  #   par.v <- par.i
+  # }
 
   #  Segmentation ------------------------------------------------------------------------
   if(Tool != "SAGA" & Tool != "GRASS" & Tool != "GRASS Superpixels SLIC")
@@ -548,7 +550,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     Segments.Grid.tmp <- raster::raster(Segments.Grid)
   }
 
-   # browser()
+    # browser()
 
 
   # Segments.Grid.tmp <- paste0(tools::file_path_sans_ext(Segments.Grid), ".sgrd")
@@ -667,7 +669,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     if(Mode.Filter.Flac == TRUE)
   {
 
-    # browser()
+   # browser()
 
     print("perform Mode Filter")
     Segments.Grid.tmp.path <- file.path(tempdir(), paste0("SegGridTmp", par.i, ".tif"))
@@ -678,14 +680,17 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
                        flags = "quiet")
 
     # print(parseGRASS("r.to.vect"))
-
-    rgrass7::execGRASS("r.to.vect", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = paste0("Segments.Grid.tmp", par.i), output = paste0("Segments_Poly_Mode", par.v), type = "area"))
+    # par.v
+    #  "quiet"
+    rgrass7::execGRASS("r.to.vect", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = paste0("Segments.Grid.tmp", par.i), output = paste0("Segments_Poly_Mode", par.i), type = "area"))
 
 
     # print(parseGRASS("v.to.rast"))
-    rgrass7::execGRASS("v.to.rast", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = paste0("Segments_Poly_Mode", par.v), output = paste0("Segments.Grid.tmp", par.i), type = "area", use = "cat"))
+    # par.v
+    #  "quiet"
+    rgrass7::execGRASS("v.to.rast", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = paste0("Segments_Poly_Mode", par.i), output = paste0("Segments.Grid.tmp", par.i), type = "area", use = "cat"))
 
 
     # compute mode
@@ -700,25 +705,32 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
       input = paste0("Segments.Grid.tmp", par.i), output = Segments.Grid.tmp.path))
 
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input =  paste0("Segments_Poly_Mode", par.v), output = Segments.Grid.Mode.tmp.path))
+      input =  paste0("Segments.Grid.Mode", par.i), output = Segments.Grid.Mode.tmp.path))
+
 
     # read data
     Segments.Grid.tmp <- raster::raster(Segments.Grid.tmp.path)
     Segments.Grid.tmp.mode <- raster::raster(Segments.Grid.Mode.tmp.path)
 
+    # browser()
     # calculate frequency table and select based on minsize
     Segments.Grid.tmp.freq <- as.data.table(raster::freq(x = Segments.Grid.tmp))
     Segments.Grid.tmp.remove <- Segments.Grid.tmp.freq[count <= Mode.Filter.Segment.MinSize,]$value
 
-    # create and evaluate expression based on minsize
-    exp <- parse(text=paste0("x == ", Segments.Grid.tmp.remove, collapse = " | "))
-    Segments.Grid.tmp.remove.r <- raster::calc(x = Segments.Grid.tmp, fun = function(x){return(ifelse(eval(exp), 1, 0))})
 
-    Segments.Grid.tmp <- raster::overlay(x = Segments.Grid.tmp, y = Segments.Grid.tmp.mode, z = Segments.Grid.tmp.remove.r,
-                              fun =  function(x, y, z){return(ifelse(z > 0, y, x))})
+    if(length(Segments.Grid.tmp.remove) > 0)
+    {
+      # create and evaluate expression based on minsize
+      exp <- parse(text=paste0("x == ", Segments.Grid.tmp.remove, collapse = " | "))
+      Segments.Grid.tmp.remove.r <- raster::calc(x = Segments.Grid.tmp, fun = function(x){return(ifelse(eval(exp), 1, 0))})
+
+      Segments.Grid.tmp <- raster::overlay(x = Segments.Grid.tmp, y = Segments.Grid.tmp.mode, z = Segments.Grid.tmp.remove.r,
+                                fun =  function(x, y, z){return(ifelse(z > 0, y, x))})
 
 
-    rm(Segments.Grid.tmp.mode, Segments.Grid.tmp.remove.r, exp, Segments.Grid.tmp.freq)
+      rm(Segments.Grid.tmp.mode, Segments.Grid.tmp.remove.r, exp, Segments.Grid.tmp.freq)
+    }
+
   }
 
 
@@ -786,14 +798,18 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
 
   # print(parseGRASS("r.to.vect"))
-  rgrass7::execGRASS("r.to.vect", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-    input = paste0("Segments.Grid.tmp", par.i), output = paste0("Segments_Poly", par.v), type = "area"))
+  # par.v
+  #  "quiet"
+  rgrass7::execGRASS("r.to.vect", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+    input = paste0("Segments.Grid.tmp", par.i), output = paste0("Segments_Poly", par.i), type = "area"))
 
   if(estimateScaleParameter == FALSE)
   {
     # print(parseGRASS("v.out.ogr"))
-    rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = paste0("Segments_Poly", par.v), output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
+    # par.v
+    #  "quiet"
+    rgrass7::execGRASS("v.out.ogr", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = paste0("Segments_Poly", par.i), output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
 
   }
 
