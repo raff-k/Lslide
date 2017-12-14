@@ -66,20 +66,20 @@
 #' @param Mode.Filter.Flac re-assign objects of a specific size based on mode values to its surroundings (moving window). Default: FALSE
 #' @param Mode.Filter.Size moving window size of mode-filter. Default: 3
 #' @param Mode.Filter.Segment.MinSize objects smaller and equal to this size are selected for filtering. Default: 3
-#'
+#' @param par.i run number. Default: ""
 #'
 #' @keywords segmentation, region growing, superpixels Simple Linear Iterative Clustering
 #'
 #'
 #' @export
-segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Output.Grid = file.path(tempdir(), "SagaRepresentativenessOutputGrid.sgrd"), Saga.Output.Lod =  file.path(tempdir(), "SagaRepresentativenessOutputLod.sgrd"),
-                         Output.Seeds =  file.path(tempdir(), "OutputSeed.sgrd"), Fast.Representativeness.LevelOfGeneralisation = "10.0", Saga.Similarity =  paste0(tempdir(),"SagaSimilarity.sgrd"), Saga.Segments.Seeds.Table =  file.path(tempdir(), "SagaSegmentsSeedsTable.mtab"),  Saga.Segmentation.Normalize = "0", Saga.Segmentation.Neighbourhood = "0", Saga.Segmentation.Method = "0",
+segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Output.Grid = file.path(tempdir(), paste0("SagaRepresentativenessOutputGrid", par.i,  ".sgrd")), Saga.Output.Lod =  file.path(tempdir(), paste0("SagaRepresentativenessOutputLod", par.i, ".sgrd")),
+                         Output.Seeds =  file.path(tempdir(), paste0("OutputSeed", par.i, ".sgrd")), Fast.Representativeness.LevelOfGeneralisation = "10.0", Saga.Similarity =  file.path(tempdir(),paste0("SagaSimilarity", par.i, ".sgrd")), Saga.Segments.Seeds.Table =  file.path(tempdir(), paste0("SagaSegmentsSeedsTable", par.i, ".mtab")),  Saga.Segmentation.Normalize = "0", Saga.Segmentation.Neighbourhood = "0", Saga.Segmentation.Method = "0",
                          Saga.Segmentation.Sig.1 = "1.0", Saga.Segmentation.Sig.2 = "1.0", Saga.Segmentation.Threshold = "0.0", Saga.Segmentation.Refresh = "0", Saga.Segmentation.Leafsize = 256, Split = "0",
                          Grass.Segmentation.Threshold = NULL, Grass.Segmentation.Weighted = FALSE, Grass.Segmentation.Method = "region_growing", Grass.Segmentation.Similarity = "euclidean", Grass.Segmentation.Minsize = 15, Grass.Segmentation.Memory = 300, Grass.Segmentation.Iterations = 50, Grass.Segmentation.Seeds = NULL, Grass.Segmentation.Neighbourhood = "0",
-                         Segmentation.Boundary.Grid = NULL,  Grass.Segmentation.Goodness = "Grass.Segmentation.Goodness", AllVertices = "FALSE", NoData = FALSE, Mask = NULL, show.output.on.console = FALSE, Seed.Method = "", Seed.Generation.Variance =  paste0(tempdir(), "SeedGenerationVariance.sgrd"), Seed.Generation.Points =  file.path(tempdir(), "SeedGenerationPoints.shp"),
+                         Segmentation.Boundary.Grid = NULL,  Grass.Segmentation.Goodness = paste0("Grass.Segmentation.Goodness", par.i), AllVertices = "FALSE", NoData = FALSE, Mask = NULL, show.output.on.console = FALSE, Seed.Method = "", Seed.Generation.Variance =  paste0(tempdir(), paste0("SeedGenerationVariance", par.i, ".sgrd")), Seed.Generation.Points =  file.path(tempdir(), paste0("SeedGenerationPoints", par.i, ".shp")),
                          Seed.Generation.Type = "0", Seed.Generation.Scale = "10.0", Generalisation.Flac = FALSE, Generalization.Mode = "1", Generalization.Radius = "1", Generalization.Threshold = "0.0", env = RSAGA::rsaga.env(),
                          Grass.SLIC.Iter = 10, Grass.SLIC.Superpixels = 200, Grass.SLIC.Step = 0, Grass.SLIC.Compactness = 1.0, Grass.SLIC.Superpixels.MinSize = 1, Grass.SLIC.Memory = 300, Grass.SLIC.Perturb = 0, burn.Boundary.into.Segments = FALSE,
-                         estimateScaleParameter = FALSE, Mode.Filter.Flac = FALSE, Mode.Filter.Size = 3, Mode.Filter.Segment.MinSize = 3, ...)
+                         estimateScaleParameter = FALSE, Mode.Filter.Flac = FALSE, Mode.Filter.Size = 3, Mode.Filter.Segment.MinSize = 3, par.i = "", ...)
 {
 
    # browser()
@@ -157,6 +157,12 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     print("No Seed Method was used!")
   }
 
+
+  # check par.i
+  if(par.i != "")
+  {
+    par.v <- gsub("[.]", "_", as.character(par.i))
+  }
 
   #  Segmentation ------------------------------------------------------------------------
   if(Tool != "SAGA" & Tool != "GRASS" & Tool != "GRASS Superpixels SLIC")
@@ -323,7 +329,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
       Grass.Segmentation.Seeds <- paste0(tools::file_path_sans_ext(Segments.Grid.tmp), ".tif")
       rgrass7::execGRASS("r.in.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        input = Grass.Segmentation.Seeds, output = "Grass.Segmentation.Seeds"))
+        input = Grass.Segmentation.Seeds, output = paste0("Grass.Segmentation.Seeds", par.i)))
 
       rm(Segments.Grid.r, Segments.Grid.tmp)
 
@@ -351,11 +357,11 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
       # print(parseGRASS("r.in.gdal"))
       rgrass7::execGRASS("r.in.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        input = inputGRASS, output = "input.GRASS"))
+        input = inputGRASS, output = paste0("input.GRASS", par.i)))
 
       # print(parseGRASS("i.group"))
       rgrass7::execGRASS("i.group", flags = c("quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        group = "GRASS.Segmentation.Group", input = "input.GRASS")) # if this already exists it will be skipped
+        group = paste0("GRASS.Segmentation.Group", par.i), paste0("input.GRASS", par.i))) # if this already exists it will be skipped
 
     } else # multiple input grids
     {
@@ -397,7 +403,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
       # print(parseGRASS("i.group"))
       rgrass7::execGRASS("i.group", flags = c("quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        group = "GRASS.Segmentation.Group", input = in.grids)) # if this already exists it will be skipped
+        group = paste0("GRASS.Segmentation.Group", par.i), input = in.grids)) # if this already exists it will be skipped
     }
 
 
@@ -413,11 +419,11 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
       #   iter = Grass.SLIC.Iter, k = Grass.SLIC.Superpixels, step = Grass.SLIC.Step, co = Grass.SLIC.Compactness, min = Grass.SLIC.Superpixels.MinSize))
       #
       rgrass7::execGRASS("i.superpixels.slic", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        group = "GRASS.Segmentation.Group", output = "Grass.Segmentation.Seeds", memory = Grass.SLIC.Memory, perturb = Grass.SLIC.Perturb,
+        group = paste0("GRASS.Segmentation.Group", par.i), output = paste0("Grass.Segmentation.Seeds", par.i), memory = Grass.SLIC.Memory, perturb = Grass.SLIC.Perturb,
         iterations = Grass.SLIC.Iter, num_pixels = Grass.SLIC.Superpixels, step = Grass.SLIC.Step, compactness = Grass.SLIC.Compactness, minsize = Grass.SLIC.Superpixels.MinSize))
 
 
-      Grass.Segmentation.Seeds <- "Grass.Segmentation.Seeds"
+      Grass.Segmentation.Seeds <- paste0("Grass.Segmentation.Seeds", par.i)
 
     }
 
@@ -432,9 +438,9 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
       {
         print("... with Seeds")
         rgrass7::execGRASS("i.segment", flags = flag.Segmentation.GRASS, Sys_show.output.on.console = show.output.on.console, parameters = list(
-          group = "GRASS.Segmentation.Group", output = "output.segmentation.GRASS", threshold = as.numeric(Grass.Segmentation.Threshold),
+          group = paste0("GRASS.Segmentation.Group", par.i), output = paste0("output.segmentation.GRASS", par.i), threshold = as.numeric(Grass.Segmentation.Threshold),
           method = Grass.Segmentation.Method, similarity = Grass.Segmentation.Similarity, minsize = Grass.Segmentation.Minsize,
-          memory = Grass.Segmentation.Memory, iterations = Grass.Segmentation.Iterations, seeds = "Grass.Segmentation.Seeds"))
+          memory = Grass.Segmentation.Memory, iterations = Grass.Segmentation.Iterations, seeds = paste0("Grass.Segmentation.Seeds", par.i)))
       }
 
       if(!is.null(Segmentation.Boundary.Grid))
@@ -450,23 +456,23 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
         # no data values must be 0
         rgrass7::execGRASS("r.in.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-          input = Grass.Segmentation.Boundary.Grid.GRASS, output = "Grass.Segmentation.Boundary.Grid"))
+          input = Grass.Segmentation.Boundary.Grid.GRASS, output = paste0("Grass.Segmentation.Boundary.Grid", par.i)))
 
         if(is.null(Grass.Segmentation.Seeds))
         {
           # browser()
           print("... with Boundary")
           rgrass7::execGRASS("i.segment", flags = flag.Segmentation.GRASS, Sys_show.output.on.console = show.output.on.console, parameters = list(
-            group = "GRASS.Segmentation.Group", output = "output.segmentation.GRASS", threshold = as.numeric(Grass.Segmentation.Threshold),
+            group = paste0("GRASS.Segmentation.Group", par.i), output = paste0("output.segmentation.GRASS", par.i), threshold = as.numeric(Grass.Segmentation.Threshold),
             method = Grass.Segmentation.Method, similarity = Grass.Segmentation.Similarity, minsize = Grass.Segmentation.Minsize,
-            memory = Grass.Segmentation.Memory, iterations = Grass.Segmentation.Iterations, bounds = "Grass.Segmentation.Boundary.Grid"))
+            memory = Grass.Segmentation.Memory, iterations = Grass.Segmentation.Iterations, bounds = paste0("Grass.Segmentation.Boundary.Grid", par.i)))
         } else
         {
           print("... with Boundary and Seeds")
           rgrass7::execGRASS("i.segment", flags = flag.Segmentation.GRASS, Sys_show.output.on.console = show.output.on.console, parameters = list(
-            group = "GRASS.Segmentation.Group", output = "output.segmentation.GRASS", threshold = as.numeric(Grass.Segmentation.Threshold),
+            group = paste0("GRASS.Segmentation.Group", par.i), output = paste0("output.segmentation.GRASS", par.i), threshold = as.numeric(Grass.Segmentation.Threshold),
             method = Grass.Segmentation.Method, similarity = Grass.Segmentation.Similarity, minsize = Grass.Segmentation.Minsize,
-            memory = Grass.Segmentation.Memory, iterations = Grass.Segmentation.Iterations, seeds = "Grass.Segmentation.Seeds", bounds = "Grass.Segmentation.Boundary.Grid"))
+            memory = Grass.Segmentation.Memory, iterations = Grass.Segmentation.Iterations, seeds = paste0("Grass.Segmentation.Seeds", par.i), bounds = paste0("Grass.Segmentation.Boundary.Grid", par.i)))
         }
 
       }
@@ -474,7 +480,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
       if(is.null(Grass.Segmentation.Seeds) & is.null(Segmentation.Boundary.Grid))
       {
         rgrass7::execGRASS("i.segment", flags =flag.Segmentation.GRASS, Sys_show.output.on.console = show.output.on.console, parameters = list(
-          group = "GRASS.Segmentation.Group", output = "output.segmentation.GRASS", threshold = as.numeric(Grass.Segmentation.Threshold),
+          group = paste0("GRASS.Segmentation.Group", par.i), output = paste0("output.segmentation.GRASS", par.i), threshold = as.numeric(Grass.Segmentation.Threshold),
           method = Grass.Segmentation.Method, similarity = Grass.Segmentation.Similarity, minsize = Grass.Segmentation.Minsize,
           memory = Grass.Segmentation.Memory, iterations = Grass.Segmentation.Iterations))
 
@@ -491,7 +497,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
       #   group = "GRASS.Segmentation.Group", output = "output.segmentation.GRASS",
       #   iter = Grass.SLIC.Iter, k = Grass.SLIC.Superpixels, step = Grass.SLIC.Step, co = Grass.SLIC.Compactness, min = Grass.SLIC.Superpixels.MinSize))
       rgrass7::execGRASS("i.superpixels.slic", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        group = "GRASS.Segmentation.Group", output = "Grass.Segmentation.Seeds", memory = Grass.SLIC.Memory, perturb = Grass.SLIC.Perturb,
+        group = paste0("GRASS.Segmentation.Group", par.i), output = paste0("Grass.Segmentation.Seeds", par.i), memory = Grass.SLIC.Memory, perturb = Grass.SLIC.Perturb,
         iterations = Grass.SLIC.Iter, num_pixels = Grass.SLIC.Superpixels, step = Grass.SLIC.Step, compactness = Grass.SLIC.Compactness, minsize = Grass.SLIC.Superpixels.MinSize))
      } # # # end tool grass superpixels SLIC
 
@@ -500,23 +506,23 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     if(tools::file_ext(Segments.Grid) == "sgrd")
     {
       rgrass7::execGRASS("r.out.gdal", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        input = "output.segmentation.GRASS", output =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), format = "SAGA"))
+        input = paste0("output.segmentation.GRASS", par.i), output =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), format = "SAGA"))
     } else {
       rgrass7::execGRASS("r.out.gdal", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        input = "output.segmentation.GRASS", output =  Segments.Grid))
+        input = paste0("output.segmentation.GRASS", par.i), output =  Segments.Grid))
     }
 
 
     # remove segmentation items
     # print(parseGRASS("g.remove"))
     rgrass7::execGRASS("g.remove", flags = c("f", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      type = "group", name = "GRASS.Segmentation.Group"))
+      type = "group", name = paste0("GRASS.Segmentation.Group", par.i)))
 
     if(length(Input.Grid.GRASS) == 1)
     {
 
       rgrass7::execGRASS("g.remove", flags = c("f", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        type = "raster", name = "input.GRASS"))
+        type = "raster", name = paste0("input.GRASS", par.i)))
     } else
     {
       rgrass7::execGRASS("g.remove", flags = c("f", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
@@ -527,7 +533,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     if(!is.null(Grass.Segmentation.Seeds))
     {
       rgrass7::execGRASS("g.remove", flags = c("f", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        type = "raster", name = "Grass.Segmentation.Seeds"))
+        type = "raster", name = paste0("Grass.Segmentation.Seeds", par.i)))
     }
 
 
@@ -664,36 +670,37 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     # browser()
 
     print("perform Mode Filter")
-    Segments.Grid.tmp.path <- file.path(tempdir(), "SegGridTmp.tif")
-    Segments.Grid.Mode.tmp.path  <- file.path(tempdir(), "SegGridMode.tif")
+    Segments.Grid.tmp.path <- file.path(tempdir(), paste0("SegGridTmp", par.i, ".tif"))
+    Segments.Grid.Mode.tmp.path  <- file.path(tempdir(), paste0("SegGridMode", par.i, ".tif"))
 
     # re-write segmentation raster
-    rgrass7::writeRAST(x = as(Segments.Grid.tmp, "SpatialGridDataFrame"), vname = "Segments.Grid.tmp", zcol = names(Segments.Grid.tmp), overwrite = TRUE,
+    rgrass7::writeRAST(x = as(Segments.Grid.tmp, "SpatialGridDataFrame"), vname = paste0("Segments.Grid.tmp", par.i), zcol = names(Segments.Grid.tmp), overwrite = TRUE,
                        flags = "quiet")
 
     # print(parseGRASS("r.to.vect"))
+
     rgrass7::execGRASS("r.to.vect", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = "Segments.Grid.tmp", output = "Segments_Poly_Mode", type = "area"))
+      input = paste0("Segments.Grid.tmp", par.i), output = paste0("Segments_Poly_Mode", par.v), type = "area"))
 
 
     # print(parseGRASS("v.to.rast"))
     rgrass7::execGRASS("v.to.rast", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = "Segments_Poly_Mode", output = "Segments.Grid.tmp", type = "area", use = "cat"))
+      input = paste0("Segments_Poly_Mode", par.v), output = paste0("Segments.Grid.tmp", par.i), type = "area", use = "cat"))
 
 
     # compute mode
     # print(parseGRASS("r.neighbors"))
     rgrass7::execGRASS("r.neighbors", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = "Segments.Grid.tmp", output = "Segments.Grid.Mode", method = "mode", size = Mode.Filter.Size))
+      input =  paste0("Segments.Grid.tmp", par.i), output = paste0("Segments.Grid.Mode", par.i), method = "mode", size = Mode.Filter.Size))
 
 
     # write out data
     # print(parseGRASS("r.out.gdal"))
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = "Segments.Grid.tmp", output = Segments.Grid.tmp.path))
+      input = paste0("Segments.Grid.tmp", par.i), output = Segments.Grid.tmp.path))
 
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = "Segments.Grid.Mode", output = Segments.Grid.Mode.tmp.path))
+      input =  paste0("Segments_Poly_Mode", par.v), output = Segments.Grid.Mode.tmp.path))
 
     # read data
     Segments.Grid.tmp <- raster::raster(Segments.Grid.tmp.path)
@@ -756,7 +763,11 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
       GRIDS = Segments.Grid.tmp.path, FILE =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), FORMAT =  "42"))
 
   } else {
-    raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid, overwrite=TRUE)
+    # browser()
+    if(file.exists(Segments.Grid) && !identical(Segments.Grid.tmp,  raster::raster(Segments.Grid)))
+    {
+         raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid, overwrite = TRUE)
+    }
   }
 
   #  browser()
@@ -770,18 +781,19 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
   print("vectorising grid classes")
   # RSAGA::rsaga.geoprocessor(lib="shapes_grid", module = 6, env = env, show.output.on.console = show.output.on.console, param = list(
   #   GRID = Segments.Grid.tmp, POLYGONS = Segments.Poly, CLASS_ALL = "1", SPLIT = Split, ALLVERTICES = AllVertices))
-  rgrass7::writeRAST(x = as(Segments.Grid.tmp, "SpatialGridDataFrame"), vname = "Segments.Grid.tmp", zcol = names(Segments.Grid.tmp), overwrite = TRUE,
+  rgrass7::writeRAST(x = as(Segments.Grid.tmp, "SpatialGridDataFrame"), vname = paste0("Segments.Grid.tmp", par.i), zcol = names(Segments.Grid.tmp), overwrite = TRUE,
                      flags = "quiet")
+
 
   # print(parseGRASS("r.to.vect"))
   rgrass7::execGRASS("r.to.vect", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-    input = "Segments.Grid.tmp", output = "Segments_Poly", type = "area"))
+    input = paste0("Segments.Grid.tmp", par.i), output = paste0("Segments_Poly", par.v), type = "area"))
 
   if(estimateScaleParameter == FALSE)
   {
     # print(parseGRASS("v.out.ogr"))
     rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = "Segments_Poly", output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
+      input = paste0("Segments_Poly", par.v), output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
 
   }
 
