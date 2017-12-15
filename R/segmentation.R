@@ -82,7 +82,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
                          estimateScaleParameter = FALSE, Mode.Filter.Flac = FALSE, Mode.Filter.Size = 7, Mode.Filter.Segment.MinSize = 3, par.i = "", ...)
 {
 
-  # browser()
+ # browser()
 
   # get start time of process
   process.time.start <- proc.time()
@@ -196,10 +196,13 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
     if(tools::file_ext(Segments.Grid) != "sgrd")
     {
-      # RSAGA::rsaga.get.usage(lib="io_gdal", module = 1)
-      # [4] GeoTIFF
+      # RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env)
+      # [4] GeoTIFF ... higher release: 2.3.1 format = "7"
+      RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env)
+      formatTIFF <- gsub("\\D", "", grep('GeoTIFF', RSAGAUsage, value = TRUE))
+
       RSAGA::rsaga.geoprocessor(lib="io_gdal", module = 1, env = env, show.output.on.console = show.output.on.console, param = list(
-      GRIDS = Segments.Grid.tmp, FILE = Segments.Grid, FORMAT = "4"))
+      GRIDS = Segments.Grid.tmp, FILE = Segments.Grid, FORMAT = formatTIFF))
 
     } else {
       Segments.Grid <- Segments.Grid.tmp
@@ -776,8 +779,12 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     Segments.Grid.tmp.path <- paste0(tempdir(), "/", "Segments_Grid.tif")
     raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid.tmp.path, overwrite=TRUE)
 
+    RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env)
+    formatSAGA <- gsub("\\D", "", grep('SAGA GIS Binary', RSAGAUsage, value = TRUE))
+
+
     RSAGA::rsaga.geoprocessor(lib = "io_gdal", module = 1, env = env, show.output.on.console = show.output.on.console, param = list(
-      GRIDS = Segments.Grid.tmp.path, FILE =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), FORMAT =  "42"))
+      GRIDS = Segments.Grid.tmp.path, FILE =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), FORMAT =   formatSAGA))
 
   } else {
     # browser()
