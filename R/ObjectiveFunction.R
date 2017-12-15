@@ -184,6 +184,7 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
                          vname =  "ScaleGrid", zcol = names(Scale.Input.Grid.r), overwrite = TRUE)
     }
 
+    # browser()
     # can take a long while
     # print(parseGRASS("v.rast.stats"))
     if(quiet == FALSE)
@@ -192,7 +193,6 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
     } else {
       flags.VRS <- c("quiet", "c")
     }
-    # browser()
 
     rgrass7::execGRASS("v.rast.stats", flags = flags.VRS, parameters = list(
       map = "Segments_Poly", raster = "ScaleGrid", column_prefix = "s", method = "number,average,variance"))
@@ -306,6 +306,9 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
 
 
   df.Objective.Function$Objective.Function <-  df.Objective.Function$Normalized.Intrasegment.Variance + df.Objective.Function$Normalized.Morans.I
+
+  df.Objective.Function$Plateau <- max(df.Objective.Function$Objective.Function, na.rm = TRUE) - sd(df.Objective.Function$Objective.Function, na.rm = TRUE)
+
 
   # write Objective.Function as csv if desired
   if(Objective.Function.save == TRUE)
