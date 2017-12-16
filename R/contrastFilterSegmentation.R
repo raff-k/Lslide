@@ -77,11 +77,11 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
   # conversion from matrix to raster
   if(quiet == FALSE) cat("... conversion of filter matrix and grey-scale-matrix to raster\n")
   gsm <- raster::raster(gsm)
-  extent(gsm) <- extent(input.filter)
+  raster::extent(gsm) <- raster::extent(input.filter)
   # projection(gsm) <- projection(input.filter)
 
   gsm.output <- raster::raster(gsm.output)
-  extent(gsm.output) <- extent(input.filter)
+  raster::extent(gsm.output) <- raster::extent(input.filter)
   # projection(gsm.output) <- projection(input.filter)
 
 
@@ -127,12 +127,12 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
     if(quiet == FALSE) cat("... morphological filter: closing\n")
     gsm.output <- EBImage::closing(x = gsm.output, kern = EBImage::makeBrush(closing.size, shape = closing.shape))
     gsm.output <- raster::raster(gsm.output)
-    extent(gsm.output) <- extent(input.filter)
+    raster::extent(gsm.output) <- raster::extent(input.filter)
   }
 
 
   # project raster
-  projection(gsm.output) <- projection(input.filter)
+  raster::projection(gsm.output) <- raster::projection(input.filter)
 
   if(writeCFRaster == TRUE)
   {
@@ -380,7 +380,7 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
 
     if(is.na(sp::proj4string(outpoly)))
     {
-      proj4string(outpoly) <- projection(input.filter)
+      sp::proj4string(outpoly) <- raster::projection(input.filter)
     }
 
     if(quiet == FALSE) cat(paste0("------ Run of contrastFilterSegmentation: " , (proc.time() - process.time.start)["elapsed"][[1]]/60, " Minutes ------\n"))

@@ -198,7 +198,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     {
       # RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env)
       # [4] GeoTIFF ... higher release: 2.3.1 format = "7"
-      RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env)
+      RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env, show = FALSE)
       formatTIFF <- gsub("\\D", "", grep('GeoTIFF', RSAGAUsage, value = TRUE))
 
       RSAGA::rsaga.geoprocessor(lib="io_gdal", module = 1, env = env, show.output.on.console = show.output.on.console, param = list(
@@ -779,7 +779,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     Segments.Grid.tmp.path <- paste0(tempdir(), "/", "Segments_Grid.tif")
     raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid.tmp.path, overwrite=TRUE)
 
-    RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env)
+    RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env,  show = FALSE)
     formatSAGA <- gsub("\\D", "", grep('SAGA GIS Binary', RSAGAUsage, value = TRUE))
 
 
