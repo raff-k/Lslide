@@ -38,7 +38,7 @@ plotObjectiveFunction <- function(x, legend.position = "bottom", title = "", sel
   x.melt <- reshape2::melt(x[, c("Scale.Parameter", "Normalized.Intrasegment.Variance", "Normalized.Morans.I", "Objective.Function", "Plateau")],
                            id.vars = "Scale.Parameter", stringAsFactors = FALSE)
 
-  labels <- c("normalized intrasegment variance", "normalized Moran's I", "objective function", "plateau function")
+  labels <- c("normalized intrasegment variance   ", "normalized Moran's I   ", "objective function", "plateau function")
 
   # working
   plotOF <- ggplot2::ggplot() +
@@ -50,18 +50,19 @@ plotObjectiveFunction <- function(x, legend.position = "bottom", title = "", sel
     scale_y_continuous(sec.axis = sec_axis(trans = y ~ I(. - minVal)/(maxVal-minVal), name = "normalized parameters [indices]")) +
     scale_x_continuous(breaks = unique(x$Scale.Parameter)) +
     labs(y = "objective function [indices]", x = "segmentation scale", title = title) +
-    theme(legend.position = legend.position, legend.direction = "vertical", legend.text = element_text(face = "bold", size = 11),
-          axis.title.y = element_text(face = "bold", size = 11), axis.title.x = element_text(face = "bold", size = 11),
-          title = element_text(face = "bold")) +
-    guides(linetype = guide_legend(ncol=2))
+    theme_bw() +
+    theme(legend.position = legend.position, legend.direction = "horizontal", legend.text = element_text(face = "bold", size = 11),
+          axis.title.y = element_text(face = "bold", size = 11, margin = margin(r = 10)), axis.title.x = element_text(face = "bold", size = 11, margin = margin(t = 10)),
+          axis.title.y.right = element_text(face = "bold", size = 11, margin = margin(l = 10)),
+          legend.margin = margin(t = -5),
+          title = element_text(face = "bold", size = 13, margin = margin(b = 10)), legend.key.width = unit(1.5, "line")) +
+    guides(linetype = guide_legend(ncol = 2))
 
   if(!is.null(selected.Scale))
   {
-    plotOF + geom_point(data =  x.melt[intersect(grep("Obj", x.melt$variable),   which(x.melt$Scale.Parameter %in% selected.Scale)),],
+    plotOF <- plotOF + geom_point(data =  x.melt[intersect(grep("Obj", x.melt$variable),   which(x.melt$Scale.Parameter %in% selected.Scale)),],
                         aes(x = Scale.Parameter, y = value, shape = "selected scale"), color = col.sSl, size = 8) +
                         scale_shape_manual(values = c("selected scale" = "circle"), name = "", labels = selected.Scale.label)
-  } else{
-    plotOF
   }
 
 
