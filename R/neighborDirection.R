@@ -170,7 +170,7 @@ neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb =
       # compare with angle direction and selection
       anglediff <- (xy.class.angle.i - xy.obj.angle.i + 180 + 360) %% 360 - 180
 
-      names(anglediff) <- obj.inter.i
+      names(anglediff) <- obj.inter.i # changed!!!!
 
       xy.obj.inTol <- sapply(X = anglediff, FUN = function(x, tol)
                         {
