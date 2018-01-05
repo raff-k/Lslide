@@ -27,6 +27,7 @@
 #' @export
 neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb = NULL, sp.PoS = NULL, nb = NULL, bb = NULL, quiet = TRUE, ...)
 {
+
   # get start time of process
   process.time.start <- proc.time()
 
@@ -165,9 +166,12 @@ neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb =
       # Angles in R are counterclockwise from E:0|360, N 90, W: 180, S: 270
       # get direction
       # xy.obj.angle.i <- (atan2(x = xy.obj.inter.i[, 1], y = xy.obj.inter.i[, 2]) * ((-180)/pi) + 90) %% 360
-
+      # browser()
       # compare with angle direction and selection
       anglediff <- (xy.class.angle.i - xy.obj.angle.i + 180 + 360) %% 360 - 180
+
+      names(anglediff) <- obj.inter.i
+
       xy.obj.inTol <- sapply(X = anglediff, FUN = function(x, tol)
                         {
                           ifelse(x <= tol && x >= -tol, 1, 0)
