@@ -28,6 +28,8 @@
 neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb = NULL, sp.PoS = NULL, nb = NULL, bb = NULL, quiet = TRUE, ...)
 {
 
+  browser()
+
   # get start time of process
   process.time.start <- proc.time()
 
@@ -126,6 +128,7 @@ neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb =
     obj.inter.i <- obj.inter[[i]]
     obj.inter.i <- setdiff(obj.inter.i, index.class[i])
 
+
     if(!is.null(obj.inter.i) & xy.class.angle[i] != -9999 & !is.na(xy.class.angle[i]))
     {
       # get cooridante from actual i-class
@@ -168,9 +171,10 @@ neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb =
       # xy.obj.angle.i <- (atan2(x = xy.obj.inter.i[, 1], y = xy.obj.inter.i[, 2]) * ((-180)/pi) + 90) %% 360
       # browser()
       # compare with angle direction and selection
+      names(xy.obj.angle.i) <- obj.inter.i # changed!!!!
+
       anglediff <- (xy.class.angle.i - xy.obj.angle.i + 180 + 360) %% 360 - 180
 
-      names(anglediff) <- obj.inter.i # changed!!!!
 
       xy.obj.inTol <- sapply(X = anglediff, FUN = function(x, tol)
                         {
