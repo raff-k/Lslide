@@ -28,8 +28,6 @@
 neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb = NULL, sp.PoS = NULL, nb = NULL, bb = NULL, quiet = TRUE, ...)
 {
 
-  browser()
-
   # get start time of process
   process.time.start <- proc.time()
 
