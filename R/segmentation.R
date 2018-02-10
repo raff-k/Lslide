@@ -183,6 +183,24 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     }
 
 
+    if(NoData == TRUE)
+    {
+      if(tools::file_ext(Mask) != "sgrd")
+      {
+        # Mask.tmp <- Mask
+        Mask.tmp <- raster::raster(Mask)
+        Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sgrd")
+        raster::writeRaster(Mask.tmp, Mask.tmp.path)
+        Mask <- Mask.tmp.path
+      }
+      # rsaga.get.modules("grid_tools", env = env)
+      # rsaga.get.usage("grid_tools", 24, env = env)
+      print("... masking No Data Area in Saga Seeds")
+      RSAGA::rsaga.geoprocessor(lib="grid_tools", module = 24, env = env, show.output.on.console = show.output.on.console, param = list(
+        GRID = Output.Seeds, MASK = Mask, MASKED = Output.Seeds))
+    }
+
+
     # perform SAGA seeded region growing
     # rsaga.get.modules("imagery_segmentation", env = env)
     # rsaga.get.usage("imagery_segmentation", 3, env = env)
@@ -267,6 +285,25 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
       } else {
         Segments.Grid.tmp <- Segments.Grid
       }
+
+      if(NoData == TRUE)
+      {
+        if(tools::file_ext(Mask) != "sgrd")
+        {
+          # Mask.tmp <- Mask
+          Mask.tmp <- raster::raster(Mask)
+          Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sgrd")
+          raster::writeRaster(Mask.tmp, Mask.tmp.path)
+          Mask <- Mask.tmp.path
+        }
+        # rsaga.get.modules("grid_tools", env = env)
+        # rsaga.get.usage("grid_tools", 24, env = env)
+        print("... masking No Data Area in Saga Seeds")
+        RSAGA::rsaga.geoprocessor(lib="grid_tools", module = 24, env = env, show.output.on.console = show.output.on.console, param = list(
+          GRID = Output.Seeds, MASK = Mask, MASKED = Output.Seeds))
+      }
+
+
 
       #
       # perform SAGA seeded region growing
