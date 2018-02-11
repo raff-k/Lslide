@@ -190,7 +190,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
         # Mask.tmp <- Mask
         Mask.tmp <- raster::raster(Mask)
         Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sgrd")
-        raster::writeRaster(x = Mask.tmp, filename = Mask.tmp.path, NAflag = NoData.Flag)
+        raster::writeRaster(x = Mask.tmp, filename = Mask.tmp.path, NAflag = NoData.Flag, overwrite = TRUE)
         Mask <- Mask.tmp.path
       }
       # rsaga.get.modules("grid_tools", env = env)
@@ -293,7 +293,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
           # Mask.tmp <- Mask
           Mask.tmp <- raster::raster(Mask)
           Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sgrd")
-          raster::writeRaster(x = Mask.tmp, filename = Mask.tmp.path, NAflag = NoData.Flag)
+          raster::writeRaster(x = Mask.tmp, filename = Mask.tmp.path, NAflag = NoData.Flag, overwrite = TRUE)
           Mask <- Mask.tmp.path
         }
         # rsaga.get.modules("grid_tools", env = env)
