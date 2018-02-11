@@ -76,7 +76,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
                          Output.Seeds =  file.path(tempdir(), paste0("OutputSeed", par.i, ".sgrd")), Fast.Representativeness.LevelOfGeneralisation = "10.0", Saga.Similarity =  file.path(tempdir(),paste0("SagaSimilarity", par.i, ".sgrd")), Saga.Segments.Seeds.Table =  file.path(tempdir(), paste0("SagaSegmentsSeedsTable", par.i, ".mtab")),  Saga.Segmentation.Normalize = "0", Saga.Segmentation.Neighbourhood = "0", Saga.Segmentation.Method = "0",
                          Saga.Segmentation.Sig.1 = "1.0", Saga.Segmentation.Sig.2 = "1.0", Saga.Segmentation.Threshold = "0.0", Saga.Segmentation.Refresh = "0", Saga.Segmentation.Leafsize = 256, Split = "0",
                          Grass.Segmentation.Threshold = NULL, Grass.Segmentation.Weighted = FALSE, Grass.Segmentation.Method = "region_growing", Grass.Segmentation.Similarity = "euclidean", Grass.Segmentation.Minsize = 15, Grass.Segmentation.Memory = 300, Grass.Segmentation.Iterations = 50, Grass.Segmentation.Seeds = NULL, Grass.Segmentation.Neighbourhood = "0",
-                         Segmentation.Boundary.Grid = NULL,  Grass.Segmentation.Goodness = paste0("Grass.Segmentation.Goodness", par.i), AllVertices = "FALSE", NoData = FALSE, Mask = NULL, show.output.on.console = FALSE, Seed.Method = "", Seed.Generation.Variance =  paste0(tempdir(), paste0("SeedGenerationVariance", par.i, ".sgrd")), Seed.Generation.Points =  file.path(tempdir(), paste0("SeedGenerationPoints", par.i, ".shp")),
+                         Segmentation.Boundary.Grid = NULL,  Grass.Segmentation.Goodness = paste0("Grass.Segmentation.Goodness", par.i), AllVertices = "FALSE", NoData = FALSE, Mask = NULL, NoData.Flag = -99999, show.output.on.console = FALSE, Seed.Method = "", Seed.Generation.Variance =  paste0(tempdir(), paste0("SeedGenerationVariance", par.i, ".sgrd")), Seed.Generation.Points =  file.path(tempdir(), paste0("SeedGenerationPoints", par.i, ".shp")),
                          Seed.Generation.Type = "0", Seed.Generation.Scale = "10.0", Generalisation.Flac = FALSE, Generalization.Mode = "1", Generalization.Radius = "1", Generalization.Threshold = "0.0", env = RSAGA::rsaga.env(),
                          Grass.SLIC.Iter = 10, Grass.SLIC.Superpixels = 200, Grass.SLIC.Step = 0, Grass.SLIC.Compactness = 1.0, Grass.SLIC.Superpixels.MinSize = 1, Grass.SLIC.Memory = 300, Grass.SLIC.Perturb = 0, burn.Boundary.into.Segments = FALSE,
                          estimateScaleParameter = FALSE, Mode.Filter.Flac = FALSE, Mode.Filter.Size = 7, Mode.Filter.Segment.MinSize = 3, par.i = "", ...)
@@ -190,7 +190,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
         # Mask.tmp <- Mask
         Mask.tmp <- raster::raster(Mask)
         Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sgrd")
-        raster::writeRaster(Mask.tmp, Mask.tmp.path)
+        raster::writeRaster(x = Mask.tmp, filename = Mask.tmp.path, NAflag = NoData.Flag)
         Mask <- Mask.tmp.path
       }
       # rsaga.get.modules("grid_tools", env = env)
@@ -293,7 +293,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
           # Mask.tmp <- Mask
           Mask.tmp <- raster::raster(Mask)
           Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sgrd")
-          raster::writeRaster(Mask.tmp, Mask.tmp.path)
+          raster::writeRaster(x = Mask.tmp, filename = Mask.tmp.path, NAflag = NoData.Flag)
           Mask <- Mask.tmp.path
         }
         # rsaga.get.modules("grid_tools", env = env)
