@@ -814,7 +814,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
   {
 
     Segments.Grid.tmp.path <- paste0(tempdir(), "/", "Segments_Grid.tif")
-    raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid.tmp.path, overwrite=TRUE)
+    raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid.tmp.path, overwrite=TRUE, NAflag = NoData.Flag)
 
     RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env,  show = FALSE)
     formatSAGA <- gsub("\\D", "", grep('SAGA GIS Binary', RSAGAUsage, value = TRUE))
@@ -827,7 +827,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     # browser()
     if(file.exists(Segments.Grid) && !identical(Segments.Grid.tmp,  raster::raster(Segments.Grid)))
     {
-         raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid, overwrite = TRUE)
+         raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid, overwrite = TRUE, NAflag = NoData.Flag)
     }
   }
 
