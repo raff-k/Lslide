@@ -183,22 +183,47 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     }
 
 
+    # if(NoData == TRUE)
+    # {
+    #
+    #   # browser()
+    #
+    #   if(tools::file_ext(Mask) != "sgrd")
+    #   {
+    #     # Mask.tmp <- Mask
+    #     Mask.tmp <- raster::raster(Mask)
+    #     Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sdat")
+    #     raster::writeRaster(x = Mask.tmp, filename = Mask.tmp.path, NAflag = NoData.Flag, overwrite = TRUE)
+    #     Mask <- file.path(tempdir(), "tmp_mask.sgrd")
+    #   }
+    #
+    #   # rsaga.get.modules("grid_tools", env = env)
+    #   # rsaga.get.usage("grid_tools", 24, env = env)
+    #   print("... masking No Data Area in Saga Seeds")
+    #   RSAGA::rsaga.geoprocessor(lib="grid_tools", module = 24, env = env, show.output.on.console = show.output.on.console, param = list(
+    #     GRID = Output.Seeds, MASK = Mask, MASKED = Output.Seeds))
+    # }
+
+
     if(NoData == TRUE)
     {
 
+      # browser()
       Mask.tmp.path <- Mask
 
       if(tools::file_ext(Mask) != "sgrd")
       {
-        # RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env)
-        # [4] GeoTIFF ... higher release: 2.3.1 format = "7"
-        RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env, show = FALSE)
-        formatTIFF <- gsub("\\D", "", grep('GeoTIFF', RSAGAUsage, value = TRUE))
+
+        RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env,  show = FALSE)
+        formatSAGA <- gsub("\\D", "", grep('SAGA GIS Binary', RSAGAUsage, value = TRUE))
+
+        Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sdat")
+
+
+        RSAGA::rsaga.geoprocessor(lib = "io_gdal", module = 1, env = env, show.output.on.console = show.output.on.console, param = list(
+          GRIDS = Mask, FILE = Mask.tmp.path, FORMAT = formatSAGA))
 
         Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sgrd")
-
-        RSAGA::rsaga.geoprocessor(lib="io_gdal", module = 1, env = env, show.output.on.console = show.output.on.console, param = list(
-          GRIDS = Mask, FILE = Mask.tmp.path, FORMAT = formatTIFF))
       }
 
       # rsaga.get.modules("grid_tools", env = env)
@@ -296,14 +321,16 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
       if(NoData == TRUE)
       {
+
         # if(tools::file_ext(Mask) != "sgrd")
         # {
         #   # Mask.tmp <- Mask
         #   Mask.tmp <- raster::raster(Mask)
-        #   Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sgrd")
+        #   Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sdat")
         #   raster::writeRaster(x = Mask.tmp, filename = Mask.tmp.path, NAflag = NoData.Flag, overwrite = TRUE)
-        #   Mask <- Mask.tmp.path
+        #   Mask <- file.path(tempdir(), "tmp_mask.sgrd")
         # }
+        #
         # # rsaga.get.modules("grid_tools", env = env)
         # # rsaga.get.usage("grid_tools", 24, env = env)
         # print("... masking No Data Area in Saga Seeds")
@@ -314,15 +341,17 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
         if(tools::file_ext(Mask) != "sgrd")
         {
-          # RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env)
-          # [4] GeoTIFF ... higher release: 2.3.1 format = "7"
-          RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env, show = FALSE)
-          formatTIFF <- gsub("\\D", "", grep('GeoTIFF', RSAGAUsage, value = TRUE))
+
+          RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env,  show = FALSE)
+          formatSAGA <- gsub("\\D", "", grep('SAGA GIS Binary', RSAGAUsage, value = TRUE))
+
+          Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sdat")
+
+
+          RSAGA::rsaga.geoprocessor(lib = "io_gdal", module = 1, env = env, show.output.on.console = show.output.on.console, param = list(
+            GRIDS = Mask, FILE = Mask.tmp.path, FORMAT = formatSAGA))
 
           Mask.tmp.path <- file.path(tempdir(), "tmp_mask.sgrd")
-
-          RSAGA::rsaga.geoprocessor(lib="io_gdal", module = 1, env = env, show.output.on.console = show.output.on.console, param = list(
-            GRIDS = Mask, FILE = Mask.tmp.path, FORMAT = formatTIFF))
         }
 
         # rsaga.get.modules("grid_tools", env = env)
