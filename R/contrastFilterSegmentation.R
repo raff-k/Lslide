@@ -201,9 +201,16 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
     #   FEATURES = gsm.output.path, BUFFER = gsm.buf.path, DISTANCE = CFR.buf, TYPE = "1"))
 
     gsm.buf.path <- paste0(tempdir(),"/", "tmpBuf.tif")
+    gsm.output.path <- file.path(tempdir(), "tmp_gsm.tif")
 
-    rgrass7::writeRAST(x = as(gsm.output, "SpatialGridDataFrame"), vname = "tmpGsm", zcol = names(gsm.output),
-                       overwrite = TRUE, flags = 'quiet')
+    raster::writeRaster(x = gsm.output, filename = gsm.output.path, overwrite = TRUE)
+
+    # rgrass7::writeRAST(x = as(gsm.output, "SpatialGridDataFrame"), vname = "tmpGsm", zcol = names(gsm.output),
+    #                    overwrite = TRUE, flags = 'quiet')
+    # print(rgrass7::parseGRASS("r.in.gdal"))
+    rgrass7::execGRASS("r.in.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = gsm.output.path, output = "tmpGsm"))
+
 
     # print(rgrass7::parseGRASS("r.buffer"))
     rgrass7::execGRASS("r.buffer", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
