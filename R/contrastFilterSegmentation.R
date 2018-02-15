@@ -32,7 +32,6 @@
 #' @param Segments.Poly output location for segmented objects (shapefile). Default: paste0(tempdir(), "/", "outSegPoly.shp")
 #' @param Segments.Grid output location for segmented grid. Default: paste0(tempdir(), "/", "outSegGrid.sgrd")
 #'
-#'
 #' @return
 #' \linkS4class{SpatialPolygonsDataFrame} containing the segments/objects
 #'
@@ -51,7 +50,7 @@
 
 contrastFilterSegmentation <- function(input.filter, input.segmentation = input.filter, offset = 0.06, makeBrush.size = 25, makeBrush.shape = "disc", NA.val.in = 0, clump.thresh = NULL, clump.directions = 4, env.rsaga = RSAGA::rsaga.env(),
                                        CFR.buf = 1, output.path = tempdir(), writeCFRaster = FALSE, writeRaster.NAflag = -99999, freeMemory = TRUE, show.output.on.console = FALSE, quiet = TRUE, morph.Closing = TRUE, closing.size = 3, closing.shape = "box",
-                                       Grass.Segmentation.Threshold = 0.24, Grass.Segmentation.Minsize = 0, Grass.Segmentation.Memory = 1024, Segments.Poly =  paste0(tempdir(), "/", "outSegPoly.shp"),   Segments.Grid = paste0(tempdir(), "/", "outSegGrid.sgrd"),
+                                       Grass.Segmentation.Threshold = 0.24, Grass.Segmentation.Minsize = 1, Grass.Segmentation.Memory = 1024, Segments.Poly =  file.path(tempdir(), "outSegPoly.shp"),   Segments.Grid = file.path(tempdir(), "outSegGrid.sgrd"),
                                        defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"), load.output = FALSE, fill.holes = FALSE, ...)
 {
 
@@ -203,10 +202,12 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
     gsm.buf.path <- paste0(tempdir(),"/", "tmpBuf.tif")
     gsm.output.path <- file.path(tempdir(), "tmp_gsm.tif")
 
-    raster::writeRaster(x = gsm.output, filename = gsm.output.path, overwrite = TRUE)
+    # browser()
+    raster::writeRaster(x = gsm.output, filename = gsm.output.path, overwrite = TRUE, NAflag = writeRaster.NAflag)
 
     # rgrass7::writeRAST(x = as(gsm.output, "SpatialGridDataFrame"), vname = "tmpGsm", zcol = names(gsm.output),
     #                    overwrite = TRUE, flags = 'quiet')
+
     # print(rgrass7::parseGRASS("r.in.gdal"))
     rgrass7::execGRASS("r.in.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
       input = gsm.output.path, output = "tmpGsm"))
@@ -248,14 +249,23 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
 
 
   # load data into GRASS
-  rgrass7::writeRAST(as(input.segmentation, 'SpatialGridDataFrame'), "inputGrass",
-                     zcol = "layer", useGDAL = TRUE, flags = c("overwrite"))
+  # rgrass7::writeRAST(as(input.segmentation, 'SpatialGridDataFrame'), "inputGrass",
+  #                    zcol = "layer", useGDAL = TRUE, flags = c("overwrite"))
+
+  input.segmentation.path <- file.path(tempdir(), "tmp_segInp.tif")
+  raster::writeRaster(x = input.segmentation, filename = input.segmentation.path, overwrite = TRUE, NAflag = writeRaster.NAflag)
+
+  # print(rgrass7::parseGRASS("r.in.gdal"))
+  rgrass7::execGRASS("r.in.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+    input = input.segmentation.path, output = "inputGrass"))
+
 
 
   # create an imagery group
   rgrass7::execGRASS("i.group", flags = c("quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
     group = "GRASS.Segmentation.Group", input = "inputGrass"))
 
+  # browser()
   # start segmentation
   # print(parseGRASS("i.segment"))
   rgrass7::execGRASS("i.segment", group = "GRASS.Segmentation.Group", flags = c("overwrite"), output = "output.segmentation.GRASS", threshold = Grass.Segmentation.Threshold,
@@ -266,7 +276,10 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
   # print(parseGRASS("r.out.gdal"))
   if(tools::file_ext(Segments.Grid) == "sgrd")
   {
-   Segments.Grid.tmp <- paste0(tempdir(), "/", tools::file_path_sans_ext(basename(Segments.Grid)), ".tif")
+   #  browser()
+
+   Segments.Grid.tmp <- file.path(tempdir(), paste0(tools::file_path_sans_ext(basename(Segments.Grid)), ".tif"))
+
 
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
       input = "output.segmentation.GRASS", type = "Int32", output =  Segments.Grid.tmp, format = "GTiff",
@@ -276,10 +289,11 @@ contrastFilterSegmentation <- function(input.filter, input.segmentation = input.
     #   input = "output.segmentation.GRASS", type = "Int32", output =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), format = "SAGA",
     #   nodata =  writeRaster.NAflag))
 
-
+    RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env.rsaga,  show = FALSE)
+    formatSAGA <- gsub("\\D", "", grep('SAGA GIS Binary', RSAGAUsage, value = TRUE))
 
     RSAGA::rsaga.geoprocessor(lib = "io_gdal", module = 1, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
-      GRIDS = Segments.Grid.tmp, FILE =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), FORMAT =  "43"))
+      GRIDS = Segments.Grid.tmp, FILE =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), FORMAT =  formatSAGA))
 
 #
 #     raster::writeRaster(x = raster::raster(Segments.Grid.tmp), filename = paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"),
