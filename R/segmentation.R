@@ -768,11 +768,18 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
     print("perform Mode Filter")
     Segments.Grid.tmp.path <- file.path(tempdir(), paste0("SegGridTmp", par.i, ".tif"))
+    raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid.tmp.path, overwrite = TRUE, NAflag = NoData.Flag)
+
     Segments.Grid.Mode.tmp.path  <- file.path(tempdir(), paste0("SegGridMode", par.i, ".tif"))
 
     # re-write segmentation raster
-    rgrass7::writeRAST(x = as(Segments.Grid.tmp, "SpatialGridDataFrame"), vname = paste0("Segments.Grid.tmp", par.i), zcol = names(Segments.Grid.tmp), overwrite = TRUE,
-                       flags = "quiet")
+    # rgrass7::writeRAST(x = as(Segments.Grid.tmp, "SpatialGridDataFrame"), vname = paste0("Segments.Grid.tmp", par.i), zcol = names(Segments.Grid.tmp), overwrite = TRUE,
+    #                    flags = "quiet")
+
+    # print(rgrass7::parseGRASS("r.in.gdal"))
+    rgrass7::execGRASS("r.in.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      input = Segments.Grid.tmp.path, output = paste0("Segments.Grid.tmp", par.i)))
+
 
     # print(parseGRASS("r.to.vect"))
     # par.v
@@ -897,8 +904,17 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
   print("vectorising grid classes")
   # RSAGA::rsaga.geoprocessor(lib="shapes_grid", module = 6, env = env, show.output.on.console = show.output.on.console, param = list(
   #   GRID = Segments.Grid.tmp, POLYGONS = Segments.Poly, CLASS_ALL = "1", SPLIT = Split, ALLVERTICES = AllVertices))
-  rgrass7::writeRAST(x = as(Segments.Grid.tmp, "SpatialGridDataFrame"), vname = paste0("Segments.Grid.tmp", par.i), zcol = names(Segments.Grid.tmp), overwrite = TRUE,
-                     flags = "quiet")
+  # rgrass7::writeRAST(x = as(Segments.Grid.tmp, "SpatialGridDataFrame"), vname = paste0("Segments.Grid.tmp", par.i), zcol = names(Segments.Grid.tmp), overwrite = TRUE,
+  #                    flags = "quiet")
+
+  Segments.Grid.tmp.path <- file.path(tempdir(), paste0("SegGridTmp", par.i, ".tif"))
+  raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid.tmp.path, overwrite = TRUE, NAflag = NoData.Flag)
+
+  # print(rgrass7::parseGRASS("r.in.gdal"))
+  rgrass7::execGRASS("r.in.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+    input = Segments.Grid.tmp.path, output = paste0("Segments.Grid.tmp", par.i)))
+
+
 
 
   # print(parseGRASS("r.to.vect"))
