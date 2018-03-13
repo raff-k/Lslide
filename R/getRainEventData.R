@@ -46,7 +46,7 @@ getRainEventData <- function(x, type = "daily", rainThresh = 0.2, rainOffLength 
     stop('"rainOffLength" must be a positive value')
   }
 
-  if(RD == 0 | MAP == 0)
+  if((!is.null(RD) && RD == 0) | (!is.null(MAP) && MAP == 0))
   {
     stop('"RD" or "MAP" are nor allowed to be "0"')
   }
