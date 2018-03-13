@@ -5,39 +5,42 @@
 \title{Segmentation}
 \usage{
 segmentation(Tool, Segments.Grid, Segments.Poly, Input.Grid,
-  Saga.Output.Grid = paste0(segmentation.tmp.path,
-  "SagaRepresentativenessOutputGrid.sgrd"),
-  Saga.Output.Lod = paste0(segmentation.tmp.path,
-  "SagaRepresentativenessOutputLod.sgrd"),
-  Output.Seeds = paste0(segmentation.tmp.path, "OutputSeed.sgrd"),
+  Saga.Output.Grid = file.path(tempdir(),
+  paste0("SagaRepresentativenessOutputGrid", par.i, ".sgrd")),
+  Saga.Output.Lod = file.path(tempdir(),
+  paste0("SagaRepresentativenessOutputLod", par.i, ".sgrd")),
+  Output.Seeds = file.path(tempdir(), paste0("OutputSeed", par.i, ".sgrd")),
   Fast.Representativeness.LevelOfGeneralisation = "10.0",
-  Saga.Similarity = paste0(segmentation.tmp.path, "SagaSimilarity.sgrd"),
-  Saga.Segments.Seeds.Table = paste0(segmentation.tmp.path,
-  "SagaSegmentsSeedsTable.mtab"), Saga.Segmentation.Normalize = "0",
-  Saga.Segmentation.Neighbourhood = "0", Saga.Segmentation.Method = "0",
-  Saga.Segmentation.Sig.1 = "1.0", Saga.Segmentation.Sig.2 = "1.0",
-  Saga.Segmentation.Threshold = "0.0", Saga.Segmentation.Refresh = "0",
-  Saga.Segmentation.Leafsize = 256, Split = "0",
-  Grass.Segmentation.Threshold = NULL, Grass.Segmentation.Weighted = FALSE,
+  Saga.Similarity = file.path(tempdir(), paste0("SagaSimilarity", par.i,
+  ".sgrd")), Saga.Segments.Seeds.Table = file.path(tempdir(),
+  paste0("SagaSegmentsSeedsTable", par.i, ".mtab")),
+  Saga.Segmentation.Normalize = "0", Saga.Segmentation.Neighbourhood = "0",
+  Saga.Segmentation.Method = "0", Saga.Segmentation.Sig.1 = "1.0",
+  Saga.Segmentation.Sig.2 = "1.0", Saga.Segmentation.Threshold = "0.0",
+  Saga.Segmentation.Refresh = "0", Saga.Segmentation.Leafsize = 256,
+  Split = "0", Grass.Segmentation.Threshold = NULL,
+  Grass.Segmentation.Weighted = FALSE,
   Grass.Segmentation.Method = "region_growing",
   Grass.Segmentation.Similarity = "euclidean",
   Grass.Segmentation.Minsize = 15, Grass.Segmentation.Memory = 300,
   Grass.Segmentation.Iterations = 50, Grass.Segmentation.Seeds = NULL,
   Grass.Segmentation.Neighbourhood = "0", Segmentation.Boundary.Grid = NULL,
-  Grass.Segmentation.Goodness = "Grass.Segmentation.Goodness",
+  Grass.Segmentation.Goodness = paste0("Grass.Segmentation.Goodness", par.i),
   AllVertices = "FALSE", NoData = FALSE, Mask = NULL,
-  show.output.on.console = FALSE, Seed.Method = "",
-  Seed.Generation.Variance = paste0(segmentation.tmp.path,
-  "SeedGenerationVariance.sgrd"),
-  Seed.Generation.Points = paste0(segmentation.tmp.path,
-  "SeedGenerationPoints.shp"), Seed.Generation.Type = "0",
+  NoData.Flag = -99999, show.output.on.console = FALSE, Seed.Method = "",
+  Seed.Generation.Variance = paste0(tempdir(),
+  paste0("SeedGenerationVariance", par.i, ".sgrd")),
+  Seed.Generation.Points = file.path(tempdir(), paste0("SeedGenerationPoints",
+  par.i, ".shp")), Seed.Generation.Type = "0",
   Seed.Generation.Scale = "10.0", Generalisation.Flac = FALSE,
   Generalization.Mode = "1", Generalization.Radius = "1",
-  Generalization.Threshold = "0.0", Grass.SLIC.Iter = 10,
-  Grass.SLIC.Superpixels = 200, Grass.SLIC.Step = 0,
+  Generalization.Threshold = "0.0", env = RSAGA::rsaga.env(),
+  Grass.SLIC.Iter = 10, Grass.SLIC.Superpixels = 200, Grass.SLIC.Step = 0,
   Grass.SLIC.Compactness = 1, Grass.SLIC.Superpixels.MinSize = 1,
   Grass.SLIC.Memory = 300, Grass.SLIC.Perturb = 0,
-  burn.Boundary.into.Segments = FALSE, ...)
+  burn.Boundary.into.Segments = FALSE, estimateScaleParameter = FALSE,
+  Mode.Filter.Flac = FALSE, Mode.Filter.Size = 7,
+  Mode.Filter.Segment.MinSize = 3, par.i = "", ...)
 }
 \arguments{
 \item{Tool}{GRASS, SAGA or GRASS Superixels SLIC. Definition of open-source software which will be used}
@@ -94,7 +97,7 @@ segmentation(Tool, Segments.Grid, Segments.Poly, Input.Grid,
 
 \item{Grass.Segmentation.Seeds}{input of seeds raster. Enables bottom-up segmentation. Default: NULL}
 
-\item{Segmentation.Boundary.Grid}{input of boundary raster. Enables top-down (or hierarchical) segmentation. Default: NULL}
+\item{Segmentation.Boundary.Grid}{input of boundary raster. Enables top-down (or hierarchical) segmentation. Default: NULL. NULL values must be 0 (or any other not segment value!).}
 
 \item{Grass.Segmentation.Goodness}{name for output goodness of fit estimate map. Default:"Grass.Segmentation.Goodness"}
 
@@ -122,6 +125,8 @@ segmentation(Tool, Segments.Grid, Segments.Poly, Input.Grid,
 
 \item{Generalization.Threshold}{threshold for applying majority filters. Default: "0.0"}
 
+\item{env}{environment of RSAGA. Default: RSAGA::rsaga.env()}
+
 \item{Grass.SLIC.Iter}{maximum number of iterations. Default: 10}
 
 \item{Grass.SLIC.Superpixels}{approximate number of output super pixels. Default: 200}
@@ -137,6 +142,16 @@ segmentation(Tool, Segments.Grid, Segments.Poly, Input.Grid,
 \item{Grass.SLIC.Perturb}{Perturb initial super pixel centers. Percent of intitial superpixel radius. Default: 0, range: 0-100}
 
 \item{burn.Boundary.into.Segments}{vector specifing if boundary grid is burned into segmentation (1) or seeds (2). Default: FALSE, maximum length: 2}
+
+\item{estimateScaleParameter}{must be only be TRUE when scale parameter function is used. Default: FALSE}
+
+\item{Mode.Filter.Flac}{re-assign objects of a specific size based on mode values to its surroundings (moving window). Default: FALSE}
+
+\item{Mode.Filter.Size}{moving window size of mode-filter. Default: 3}
+
+\item{Mode.Filter.Segment.MinSize}{objects smaller and equal to this size are selected for filtering. Default: 3}
+
+\item{par.i}{run number. Default: ""}
 }
 \description{
 This function uses the open-source software of GRASS and SAGA GIS

@@ -4,13 +4,15 @@
 \alias{ESP}
 \title{ESP - ESTIMATION OF SCALE PARAMETER}
 \usage{
-ESP(Scale.Input.Grid, Scale.Input.Grid.Cell.Size = "1",
+ESP(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Size = "1",
   Scale.Statistic.Min.Size = "0", ESP.save = FALSE, ESP.save.path = NULL,
   Count = "1", Min = "0", Max = "0", Range = "0", Sum = "0",
   Mean = "0", Var = "0", Stddev = "1", Quantile = 0, Scales,
-  Grass.ESP.Method = "Threshold", ...)
+  Grass.ESP.Method = "Threshold", Segments.Poly, Seed.Method = "", ...)
 }
 \arguments{
+\item{Tool}{open-source software to compute segmentation analysis. GRASS or SAGA}
+
 \item{Scale.Input.Grid}{input grid for computing segmentation scale parameters}
 
 \item{Scale.Input.Grid.Cell.Size}{cell size of input grid. Default: "1"}
@@ -42,6 +44,12 @@ ESP(Scale.Input.Grid, Scale.Input.Grid.Cell.Size = "1",
 \item{Scales}{containing scale parameters for loop-segmentation}
 
 \item{Grass.ESP.Method}{determining on which parameter the objective function (~loop) should be performed. Default: "Threshold"}
+
+\item{Segments.Poly}{...}
+
+\item{Seed.Method}{""}
+
+\item{env}{...}
 
 \item{other...}{see \code{\link{segmentation}}}
 }

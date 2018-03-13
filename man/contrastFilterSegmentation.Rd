@@ -6,15 +6,16 @@
 \usage{
 contrastFilterSegmentation(input.filter, input.segmentation = input.filter,
   offset = 0.06, makeBrush.size = 25, makeBrush.shape = "disc",
-  NA.val.in = 0, clump.thresh = NULL, clump.directions = 8,
-  env.rsaga = RSAGA::rsaga.env(), CFR.buf = "1", output.path = tempdir(),
+  NA.val.in = 0, clump.thresh = NULL, clump.directions = 4,
+  env.rsaga = RSAGA::rsaga.env(), CFR.buf = 1, output.path = tempdir(),
   writeCFRaster = FALSE, writeRaster.NAflag = -99999, freeMemory = TRUE,
-  SOOC = FALSE, quiet = TRUE, Grass.Segmentation.Threshold = 0.24,
-  Grass.Segmentation.Minsize = 0, Grass.Segmentation.Memory = 1024,
-  Segments.Poly = paste0(tempdir(), "/", "outSegPoly.shp"),
-  Segments.Grid = paste0(tempdir(), "/", "outSegGrid.sgrd"),
+  show.output.on.console = FALSE, quiet = TRUE, morph.Closing = TRUE,
+  closing.size = 3, closing.shape = "box",
+  Grass.Segmentation.Threshold = 0.24, Grass.Segmentation.Minsize = 1,
+  Grass.Segmentation.Memory = 1024, Segments.Poly = file.path(tempdir(),
+  "outSegPoly.shp"), Segments.Grid = file.path(tempdir(), "outSegGrid.sgrd"),
   defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"),
-  load.output = FALSE, ...)
+  load.output = FALSE, fill.holes = FALSE, ...)
 }
 \arguments{
 \item{input.filter}{\linkS4class{RasterLayer} on which the filtering is applied}
@@ -45,7 +46,7 @@ contrastFilterSegmentation(input.filter, input.segmentation = input.filter,
 
 \item{freeMemory}{free memory after contrast filtering. Default: TRUE}
 
-\item{SOOC}{show output of tools on console. Default: FALSE}
+\item{show.output.on.console}{show output of tools on console. Default: FALSE}
 
 \item{quiet}{do not show comments and process time in console. Default: TRUE}
 
@@ -60,6 +61,8 @@ contrastFilterSegmentation(input.filter, input.segmentation = input.filter,
 \item{Segments.Grid}{output location for segmented grid. Default: paste0(tempdir(), "/", "outSegGrid.sgrd")}
 
 \item{defaultGrass}{GRASS GIS environmet for temporal setup, see package link2GI. Default: c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64")}
+
+\item{fill.holes}{polygon segmentation output contains holes. Default: FALSE}
 
 \item{Fast.Representativeness.LevelOfGeneralisation}{level of generalisation for computing seed points. Default: "2.0"}
 }
