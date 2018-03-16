@@ -332,6 +332,7 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
     return(res.df)
   } else {
 
+
     # standard vector output
     return(res)
   }
