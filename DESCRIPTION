@@ -10,6 +10,7 @@ Description: This package was created with respect to the authors master thesis.
 Imports: 
          cleangeo (>= 0.2.1),
          data.table (>= 1.10.0),
+         dplyr (>= 0.7.4),
          link2GI (>= 0.1-0), 
          foreign (>= 0.8.67),
          ggplot2 (>= 2.2.1),
