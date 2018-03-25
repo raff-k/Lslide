@@ -373,7 +373,7 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
         res <- res[-extr.sREWeight.pos] # remove this variable from results
 
         # ... ... create data.frame for weighted Intensity
-        sREWeight.ColName <- unique(gsub(pattern = "_[[:digit:]]", replacement = "", x = names(extr.sREWeight)))
+        sREWeight.ColName <- unique(gsub(pattern = "_[[:digit:]].*", replacement = "", x = names(extr.sREWeight)))
         sREWeight.df <- data.frame(matrix(extr.sREWeight, ncol = length(sREWeight.ColName)))
         colnames(sREWeight.df) <- sREWeight.ColName
 
@@ -385,7 +385,7 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
         # ... create main data frame
         # ... ... names
         res.df.main.ColName <- names(res)[1:(startSub-1)] # get names
-        res.df.main.ColName <- unique(gsub(pattern = "_[[:digit:]]", replacement = "", x = res.df.main.ColName)) # adapt colnames
+        res.df.main.ColName <- unique(gsub(pattern = "_[[:digit:]].*", replacement = "", x = res.df.main.ColName)) # adapt colnames
 
         # ... ... data.frame
         res.df.main <- data.frame(matrix(res[1:(startSub-1)], ncol = ((startSub-1)/length(S4.RainEvents))))
@@ -398,7 +398,7 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
         # ... create sub data frame
         # ... ... names
         res.df.sub.ColName <- names(res)[startSub:length(res)] # get names
-        res.df.sub.ColName <- unique(gsub(pattern = "^s|_[[:digit:]]", replacement = "", x = res.df.sub.ColName)) # adapt colnames
+        res.df.sub.ColName <- unique(gsub(pattern = "^s|_[[:digit:]].*", replacement = "", x = res.df.sub.ColName)) # adapt colnames
 
         # ... ... data.frame
         res.df.sub <- data.frame(matrix(res[startSub:length(res)], ncol = ((startSub-1)/length(S4.RainEvents))))
@@ -480,7 +480,7 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
                                       "RE_weightIntensity_MAP", "RE_weightIntensity_RD", "RE_weightIntensity_RDN")]
 
         # get colnames
-        res.df.ColName <- unique(gsub(pattern = "^s|_[[:digit:]]", replacement = "", x = names(res))) # adapt colnames
+        res.df.ColName <- unique(gsub(pattern = "_[[:digit:]].*", replacement = "", x = names(res))) # adapt colnames
 
         # ... ... data.frame
         res.df <- data.frame(matrix(res, ncol = length(res.df.ColName)))
