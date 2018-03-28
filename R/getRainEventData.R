@@ -18,7 +18,7 @@
 #' @param S3.rainThresh exclusion of irrelevant rainfall sub-events under and equal to this threshold (third step). Default: 1 [mm]
 #' @param S1.rainOffLength dry periods between isolated rain events in the first step. Default: c(3, 6) (hours). When dates is NULL, then the smallest values is used for separation.
 #' @param S2.rainOffLength dry periods between rainfall sub-events in the second step. Default: c(6, 12) (hours). When dates is NULL, then the smallest values is used for separation.
-#' @param S4.rainOffLength dry periods between rainfall sub-events in the second step. Default: c(6, 12) (hours). When dates is NULL, then the smallest values is used for separation.
+#' @param S4.rainOffLength dry periods between rainfall sub-events in the second step. Default: c(48, 96) (hours). When dates is NULL, then the smallest values is used for separation.
 #' @param RD average number of rainy days in a year, proxy for locate climate conditions. Default: NULL
 #' @param MAP mean annual precipitation, the long-term yearly average precipitation, see CRU - climate research units for number. Default: NULL
 #' @param RDN a climatic index that provides better description (or proxy) than the MAP for the occurence of extreme storm events (Guzzetti et al. 2006: 247). Default: MAP/RD
