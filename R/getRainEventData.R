@@ -23,6 +23,7 @@
 #' @param MAP mean annual precipitation, the long-term yearly average precipitation, see CRU - climate research units for number. Default: NULL
 #' @param RDN a climatic index that provides better description (or proxy) than the MAP for the occurence of extreme storm events (Guzzetti et al. 2006: 247). Default: MAP/RD
 #' @param index.month.warm.season month indices of the warm season. First element is start, and second element represents the end (all including). Only relevant when dates are set. Default: c(4, 10) (including April, including Ocotober)
+#' @param force.limit Usefull for standard output, if result is type list. Must be integer number of specific size. If result is smaller, than results gets filled with NA, otherwise cut to this size. Default: NULL
 #'
 #' @return
 #' vector containing rainfall metrics (see description). If return.DataFrame is TRUE a data.frame is returned containing similar
@@ -45,7 +46,7 @@
 #' @export
 getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure = NULL, sub.RainEvent = TRUE, all.RainEvent = FALSE, cumu.RainFall = NULL, return.DataFrame = FALSE,
                              S1.rainThresh = 0.2, S3.rainThresh = 1, S1.rainOffLength = c(3, 6), S2.rainOffLength = c(6, 12), S4.rainOffLength = c(48, 96),
-                             RD = NULL, MAP = NULL, RDN = MAP/RD, index.month.warm.season = c(4, 10))
+                             RD = NULL, MAP = NULL, RDN = MAP/RD, index.month.warm.season = c(4, 10), force.limit = NULL)
 {
 
   # # # # # # # # # CHECK POTENTIAL ERRORS # # # # # # # # #
@@ -118,6 +119,10 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
   }
 
 
+  if(!is.null(force.limit) && class(force.limit) != "numeric")
+  {
+    stop('function parameter "force.limit" must be of class "numeric"')
+  }
 
 
 
@@ -504,7 +509,26 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
   } else {
 
 
-    # standard vector output
+
+    # ... standard vector output -------------------
+    if(!is.null(force.limit))
+    {
+      force.limit <- round(force.limit)
+      res.names <- names(res)
+
+      if(length(res) < force.limit)
+      {
+        res <- c(res, rep(NA, (force.limit - length(res)))) # fill result
+        res.names <- c(res.names, rep("NULL DATA", (force.limit - length(res))))
+
+        names(res) <- res.names
+
+      } else{
+        res <- res[1:force.limit] # clip result
+        names(res) <- res.names[1:force.limit]
+      }
+    } # end of force.limit
+
     return(res)
   }
 
@@ -623,8 +647,8 @@ calcEventRainfallMetrics <- function(x, dates, list.RainEvents, modus, RD = RD, 
     ## get range of rain event
     # cRE.range <- paste0(range(list.RainEvents[[1]],  na.rm = TRUE), collapse = ":")
     cRE.range <- range(list.RainEvents[[1]],  na.rm = TRUE)
-    cRE.range.start <- min(cRE.range)
-    cRE.range.end <- max(cRE.range)
+    cRE.range.end <- min(cRE.range)
+    cRE.range.start <- max(cRE.range)
 
     names(cRE.range.start) <- "cRE_range_start"
     names(cRE.range.end) <- "cRE_range_end"
@@ -699,10 +723,10 @@ calcEventRainfallMetrics <- function(x, dates, list.RainEvents, modus, RD = RD, 
 
     ## get range of rain events
     # RE.range <- sapply(X = list.RainEvents, FUN = function(X) { paste0(range(x,  na.rm = TRUE), collapse = ":")})
-    RE.range.start <- sapply(X = list.RainEvents, FUN = min, na.rm = TRUE)
+    RE.range.start <- sapply(X = list.RainEvents, FUN = max, na.rm = TRUE)
     names(RE.range.start ) <- paste0("sRE_range_start_", c(1:rainEvent.nb))
 
-    RE.range.end <- sapply(X = list.RainEvents, FUN = max, na.rm = TRUE)
+    RE.range.end <- sapply(X = list.RainEvents, FUN = min, na.rm = TRUE)
     names(RE.range.end) <- paste0("sRE_range_end_", c(1:rainEvent.nb))
 
 
