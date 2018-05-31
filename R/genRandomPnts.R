@@ -37,7 +37,7 @@ genRandomPnts <- function(x, seed = 123, dist = NULL, n = Inf, maxit = 100, quie
   x.owin <- x.sp %>%
     slot(., "polygons") %>%
     lapply(X = ., FUN = function(x){sp::SpatialPolygons(list(x))}) %>%
-    lapply(X = ., FUN = spatstat::as.owin)
+    lapply(X = ., FUN = maptools::as.owin.SpatialPolygons) # spatstat::as.owin
 
 
 
@@ -63,8 +63,10 @@ genRandomPnts <- function(x, seed = 123, dist = NULL, n = Inf, maxit = 100, quie
   # back-conversion to simple feature
   pts.sf <- lapply(X = pts.ppp, FUN = '[[', 1) %>%
     lapply(X = ., FUN = function(x) sf::st_as_sfc(as(x, "SpatialPoints"))) %>%
-    do.call(c, .) %>%
-    sf::st_sf(., crs = crs)
+    do.call(c, .)
+
+  pts.sf <- sf::st_sf(ID = 1:length(pts.sf), geometry = pts.sf, crs = crs)
+
 
   # get intersected items
   pts.inter.x <- sf::st_intersects(x = pts.sf, y = x) %>% unlist
