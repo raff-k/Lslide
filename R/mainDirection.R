@@ -39,8 +39,6 @@ mainDirection <- function(spdf, angle = "main", cores = 1, quiet = TRUE)
   # vAngle <- c()
 
   # init parallel
-  browser()
-
   switch(Sys.info()[[1]],
          Windows = type  <- "PSOCK",
          Linux = type  <- "FORK",
@@ -48,10 +46,13 @@ mainDirection <- function(spdf, angle = "main", cores = 1, quiet = TRUE)
 
   cl <- parallel::makeCluster(cores, type = type)
 
-  parallel::clusterExport(cl = cl, envir = environment(),
-                          varlist = c('spdf'))
+  if(Sys.info()[[1]] == "Windows")
+  {
+    parallel::clusterExport(cl = cl, envir = environment(),
+                            varlist = c('spdf'))
 
-  parallel::clusterEvalQ(cl, library("sp", "rgeos"))
+    parallel::clusterEvalQ(cl, library("sp", "rgeos"))
+  }
 
   vAngle <- parallel::parSapply(cl = cl, X = 1:length(spdf@polygons), FUN = function(i, spdf){
   # vAngle <- sapply(X = 1:length(spdf@polygons), FUN = function(i, spdf){

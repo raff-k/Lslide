@@ -41,12 +41,20 @@ lengthWidthRatio <- function(spdf, cores = 1, quiet = TRUE)
   # vRatio <- c()
 
   # init parallel
-  cl <- parallel::makeCluster(cores)
-  parallel::clusterExport(cl = cl, envir = environment(),
-                          varlist = c('spdf'))
+  switch(Sys.info()[[1]],
+         Windows = type  <- "PSOCK",
+         Linux = type  <- "FORK",
+         Mac = type <- "FORK")
 
-  parallel::clusterEvalQ(cl, library("sp", "rgeos"))
+  cl <- parallel::makeCluster(cores, type = type)
 
+  if(Sys.info()[[1]] == "Windows")
+  {
+    parallel::clusterExport(cl = cl, envir = environment(),
+                            varlist = c('spdf'))
+
+    parallel::clusterEvalQ(cl, library("sp", "rgeos"))
+  }
 
   vRatio <- parallel::parSapply(cl = cl, X = 1:length(spdf@polygons), FUN = function(i, spdf){
   # vRatio  <- sapply(X = 1:length(spdf@polygons), FUN = function(i, spdf){

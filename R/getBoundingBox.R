@@ -80,15 +80,21 @@ getBoundingBox <- function(spdf, col.name, scale.factor = 2, k = 2, projection =
 
 
   # init parallel
-  cl <- parallel::makeCluster(cores)
-  parallel::clusterExport(cl = cl, envir = environment(),
-                          varlist = c('angle', 'spdf', 'projection', 'centroid', 'set.centroid',
-                                      'k.centroid', 'k', 'f.scale.factor', 's.scale.factor'))
+  switch(Sys.info()[[1]],
+         Windows = type  <- "PSOCK",
+         Linux = type  <- "FORK",
+         Mac = type <- "FORK")
 
-  parallel::clusterEvalQ(cl, library("sp", "rgeos"))
+  cl <- parallel::makeCluster(cores, type = type)
 
+  if(Sys.info()[[1]] == "Windows")
+  {
+    parallel::clusterExport(cl = cl, envir = environment(),
+                            varlist = c('angle', 'spdf', 'projection', 'centroid', 'set.centroid',
+                                        'k.centroid', 'k', 'f.scale.factor', 's.scale.factor'))
 
-
+    parallel::clusterEvalQ(cl, library("sp", "rgeos"))
+  }
 
   ### start creation of bounding boxes rotated and scaled in flow direction
   # start loop through polygons ---------------------------------------------

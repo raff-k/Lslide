@@ -110,10 +110,19 @@ neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb =
 
 
   # init parallel
-  cl <- parallel::makeCluster(cores)
-  parallel::clusterExport(cl = cl, envir = environment(),
-                          varlist = c('obj.inter', 'index.class', 'xy.class.angle', 'xy.class',
-                                      'tol', 'modus'))
+  switch(Sys.info()[[1]],
+         Windows = type  <- "PSOCK",
+         Linux = type  <- "FORK",
+         Mac = type <- "FORK")
+
+  cl <- parallel::makeCluster(cores, type = type)
+
+  if(Sys.info()[[1]] == "Windows")
+  {
+    parallel::clusterExport(cl = cl, envir = environment(),
+                            varlist = c('obj.inter', 'index.class', 'xy.class.angle', 'xy.class',
+                                        'tol', 'modus'))
+  }
 
 
   obj.nb.angle <- parallel::parLapply(cl = cl, X = 1:run, function(i, obj.inter, index.class, xy.class.angle, xy.class, tol, modus){
