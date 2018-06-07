@@ -4,15 +4,17 @@
 \alias{dividePolygon}
 \title{Devide Polygon into N Equal Area Parts}
 \usage{
-dividePolygon(x, angle = 0, n, btol = 1e-04, pgtol = 1e-09, maxit = 100,
-  cores = 1, quiet = TRUE)
+dividePolygon(x, angle = 0, n, trans = TRUE, btol = 1e-04,
+  pgtol = 1e-09, maxit = 100, cores = 1, quiet = TRUE)
 }
 \arguments{
 \item{x}{object of class sf}
 
-\item{angle}{default: 0 degree for Noth-South. For East-West use 90 degree.}
+\item{angle}{Can be one single value, or a vector with the same length as the input object x. North is 0 degree, and East 90. Default: 0 degree for North-South. For East-West use 90 degree.}
 
 \item{n}{number of parts}
+
+\item{trans}{angle input is transformed, so that N-S cutting is appropriate. Default: TRUE.}
 
 \item{btol}{tolerance value for lower and upper boundary in optim().Default: 0.0001}
 
@@ -36,7 +38,8 @@ appropriate.
 \itemize{
   \item Algorithm does not find optimum if polygon split results in more objects than the given number
          n. This can happen when a polygon is very ragged.
-  \item
+  \item Algorithm cut polygon on the N-S-Axis (0-180 degree). Therefore, trans is used to adapt the rotation angle
+        so that cutting is appropriate.
 
 }
 }

@@ -4,12 +4,14 @@
 \alias{mainDirection}
 \title{Object orientation or main direction}
 \usage{
-mainDirection(spdf, angle = "main", quiet = TRUE)
+mainDirection(spdf, angle = "main", cores = 1, quiet = TRUE)
 }
 \arguments{
 \item{spdf}{\linkS4class{SpatialPolygonsDataFrame} input}
 
 \item{angle}{angle taken for output. Default: "main" (alternative: "weighted main")}
+
+\item{cores}{number of cores for parallel processing. Default: 1 (sequential)}
 
 \item{quiet}{no outputs in console. Default: TRUE}
 }

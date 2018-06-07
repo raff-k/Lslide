@@ -4,10 +4,12 @@
 \alias{lengthWidthRatio}
 \title{Length-Width-Ratio}
 \usage{
-lengthWidthRatio(spdf, quiet = TRUE)
+lengthWidthRatio(spdf, cores = 1, quiet = TRUE)
 }
 \arguments{
 \item{spdf}{SpatialPolygonsDataFrame input}
+
+\item{cores}{number of cores for parallel processing. Default: 1 (sequential)}
 
 \item{quiet}{no outputs in console. Default: TRUE}
 }

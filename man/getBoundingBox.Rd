@@ -6,7 +6,7 @@
 \usage{
 getBoundingBox(spdf, col.name, scale.factor = 2, k = 2, projection = NA,
   centroid = FALSE, set.centroid = "inverse", k.centroid = 2,
-  scale.side = "long", quiet = TRUE)
+  scale.side = "long", cores = 1, quiet = TRUE)
 }
 \arguments{
 \item{spdf}{SpatialPolygonsDataFrame. SPDF must contains a valid \emph{ID} field and a field containing direction angles}
@@ -24,6 +24,8 @@ getBoundingBox(spdf, col.name, scale.factor = 2, k = 2, projection = NA,
 \item{set.centroid}{set intial starting point of bounding box with respect to the centroid. Default: "inverse" (alternative: "direction")}
 
 \item{scale.side}{side which is scaled in direction. Default: "long" (alternative: small)}
+
+\item{cores}{number of cores for parallel processing. Default: 1 (sequential)}
 
 \item{quiet}{show output on console. Default: FALSE}
 

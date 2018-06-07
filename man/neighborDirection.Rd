@@ -5,7 +5,7 @@
 \title{Calculation of the direction of every object to its neighbors}
 \usage{
 neighborDirection(spdf, col.name, modus = "nb", tol = 360, spdf.bb = NULL,
-  sp.PoS = NULL, nb = NULL, bb = NULL, quiet = TRUE, ...)
+  sp.PoS = NULL, nb = NULL, bb = NULL, cores = 1, quiet = TRUE, ...)
 }
 \arguments{
 \item{spdf}{\linkS4class{SpatialPolygonsDataFrame}, or full path of a shapefile}
@@ -23,6 +23,8 @@ neighborDirection(spdf, col.name, modus = "nb", tol = 360, spdf.bb = NULL,
 \item{nb}{object neighborhood based on \code{\link[spdep]{poly2nb}}, for modus "nb. Default: Null}
 
 \item{bb}{bounding box for modus "bb". Default: Null}
+
+\item{cores}{number of cores for parallel processing. Default: 1 (sequential)}
 
 \item{quiet}{no outputs in console. Default: TRUE}
 }

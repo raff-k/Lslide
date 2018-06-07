@@ -214,8 +214,8 @@ neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb =
         # obj.nb.angle[[i]] <- list(Object = index.class[i], NeighborDirection = xy.obj.angle.sub)
         return(list(Object = index.class[i], NeighborDirection = xy.obj.angle.sub))
       } else {
-        # obj.nb.angle[[i]] <- list(Object = index.class[i], NeighborDirection = NA)
-        return(list(Object = index.class[i], NeighborDirection = NA))
+        # obj.nb.angle[[i]] <- list(Object = index.class[i], NeighborDirection = 0)
+        return(list(Object = index.class[i], NeighborDirection = 0))
       }
 
 
