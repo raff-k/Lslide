@@ -5,6 +5,7 @@
 #'
 #' @param spdf \linkS4class{SpatialPolygonsDataFrame} input
 #' @param angle angle taken for output. Default: "main" (alternative: "weighted main")
+#' @param cores number of cores for parallel processing. Default: 1 (sequential)
 #' @param quiet no outputs in console. Default: TRUE
 #'
 #' @note
@@ -27,7 +28,7 @@
 #'
 #'
 #' @export
-mainDirection <- function(spdf, angle = "main", quiet = TRUE)
+mainDirection <- function(spdf, angle = "main", cores = 1, quiet = TRUE)
 {
 
   # get start time of process
@@ -35,14 +36,27 @@ mainDirection <- function(spdf, angle = "main", quiet = TRUE)
 
 
   # vector with angles
-  vAngle <- c()
+  # vAngle <- c()
 
-  for(i in 1:length(spdf@polygons))
-  {
+  # init parallel
+  cl <- parallel::makeCluster(cores)
+  parallel::clusterExport(cl = cl, envir = environment(),
+                          varlist = c('spdf'))
+
+  parallel::clusterEvalQ(cl, library("sp", "rgeos"))
+
+
+  vAngle <- parallel::parSapply(cl = cl, X = 1:length(spdf@polygons), FUN = function(i, spdf){
+  # vAngle <- sapply(X = 1:length(spdf@polygons), FUN = function(i, spdf){
+  # for(i in 1:length(spdf@polygons))
+  # {
+
+    # browser()
+    # cat(i, "\n")
 
     ### perform principal component analysis
     pca.matrix <- matrix(ncol = 2)
-    # retrieve polygons (nevessary if polygon consists of multiple parts)
+    # retrieve polygons (necessary if polygon consists of multiple parts)
     for(j in 1:length(spdf@polygons[[i]]@Polygons))
     {
       pca.matrix <- rbind(pca.matrix, spdf@polygons[[i]]@Polygons[[j]]@coords)
@@ -61,8 +75,8 @@ mainDirection <- function(spdf, angle = "main", quiet = TRUE)
     v1.y <- eigenvector[2] * eigenvalue[1] # last point of vector 1, y coordinate
     v2.x <- eigenvector[3] * eigenvalue[2] # last point of vector 2, x coordinate
     v2.y <- eigenvector[4] * eigenvalue[2] # last point of vector 2, y coordinate
-    v1 <- SpatialLines(list(Lines(list(Line(cbind(c(pca$center[1], pca$center[1] + v1.x), c(pca$center[2], pca$center[2] + v1.y)))), ID = "v1")))
-    v2 <- SpatialLines(list(Lines(list(Line(cbind(c(pca$center[1], pca$center[1] + v2.x), c(pca$center[2], pca$center[2] + v2.y)))), ID= "v2")))
+    v1 <- sp::SpatialLines(list(sp::Lines(list(sp::Line(cbind(c(pca$center[1], pca$center[1] + v1.x), c(pca$center[2], pca$center[2] + v1.y)))), ID = "v1")))
+    v2 <- sp::SpatialLines(list(sp::Lines(list(sp::Line(cbind(c(pca$center[1], pca$center[1] + v2.x), c(pca$center[2], pca$center[2] + v2.y)))), ID= "v2")))
 
 
     ### calculation of angles - atan2 gives values in radiant and must be converted to degree
@@ -82,7 +96,7 @@ mainDirection <- function(spdf, angle = "main", quiet = TRUE)
     if(angle == "main")
     {
       # check which vector is the longest for the main direction
-      if(gLength(v1) >= gLength(v2))
+      if(rgeos::gLength(v1) >= rgeos::gLength(v2))
       {
         vL.x <- v1.x
         vL.y <- v1.y
@@ -103,17 +117,22 @@ mainDirection <- function(spdf, angle = "main", quiet = TRUE)
     }
 
     # append angle
-    vAngle <- c(vAngle, a)
-  } # end for
+    # vAngle <- c(vAngle, a)
+    return(a)
 
-  dt.angle <- data.table(ID = spdf@data$ID)
+  # } # end for
+  }, spdf = spdf) # end lapply
+
+  parallel::stopCluster(cl)
+
+  dt.angle <- data.frame(ID = spdf@data$ID)
   dt.angle$angle <- vAngle
   dt.angle$angle_inv <- vAngle + 180
 
 
   # get time of process
   process.time.run <- proc.time() - process.time.start
-  if(quiet == FALSE) print(paste0("------ Run of MainDirection: " , process.time.run["elapsed"][[1]]/60, " Minutes ------"))
+  if(quiet == FALSE) cat(paste0("------ Run of MainDirection: " , round(x = process.time.run["elapsed"][[1]]/60, digits = 4), " Minutes ------ \n"))
 
 
   return(dt.angle)

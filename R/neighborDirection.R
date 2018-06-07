@@ -10,6 +10,7 @@
 #' @param sp.PoS \linkS4class{SpatialPoints} to which the direction is calculated. As standard they are calculated from spdf input. Default: NULL
 #' @param nb object neighborhood based on \code{\link[spdep]{poly2nb}}, for modus "nb. Default: Null
 #' @param bb bounding box for modus "bb". Default: Null
+#' @param cores number of cores for parallel processing. Default: 1 (sequential)
 #' @param quiet no outputs in console. Default: TRUE
 #'
 #' @return
@@ -25,7 +26,7 @@
 #'
 #'
 #' @export
-neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb = NULL, sp.PoS = NULL, nb = NULL, bb = NULL, quiet = TRUE, ...)
+neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb = NULL, sp.PoS = NULL, nb = NULL, bb = NULL, cores = 1, quiet = TRUE, ...)
 {
 
   # get start time of process
@@ -59,7 +60,7 @@ neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb =
   # initialize variables for loop
   if(modus == "bb"){obj.inTol.T <- c()} # variable containing information about which neighbors are in tolerance to angle
 
-  obj.nb.angle <- list()
+  # obj.nb.angle <- list()
 
   # get object that intersect with class object
   if(modus == "bb")
@@ -107,8 +108,18 @@ neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb =
   # start loop ------
   if(quiet == FALSE){cat("Start loop...\n")}
 
-  for(i in 1:run)
-  {
+
+  # init parallel
+  cl <- parallel::makeCluster(cores)
+  parallel::clusterExport(cl = cl, envir = environment(),
+                          varlist = c('obj.inter', 'index.class', 'xy.class.angle', 'xy.class',
+                                      'tol', 'modus'))
+
+
+  obj.nb.angle <- parallel::parLapply(cl = cl, X = 1:run, function(i, obj.inter, index.class, xy.class.angle, xy.class, tol, modus){
+  # obj.nb.angle <- lapply(X = 1:run, FUN = function(i, obj.inter, index.class, xy.class.angle, xy.class, tol, modus){
+  # for(i in 1:run)
+  # {
     # print(i)
     if(quiet == FALSE)
     {
@@ -191,22 +202,30 @@ neighborDirection <- function(spdf, col.name, modus = "nb", tol = 360, spdf.bb =
         }
 
         xy.obj.angle.sub <- xy.obj.angle.i[which(xy.obj.inTol == 1)]
-        obj.nb.angle[[i]] <- list(Object = index.class[i], NeighborDirection = xy.obj.angle.sub)
+        # obj.nb.angle[[i]] <- list(Object = index.class[i], NeighborDirection = xy.obj.angle.sub)
+        return(list(Object = index.class[i], NeighborDirection = xy.obj.angle.sub))
       } else {
-        obj.nb.angle[[i]] <- list(Object = index.class[i], NeighborDirection = NA)
+        # obj.nb.angle[[i]] <- list(Object = index.class[i], NeighborDirection = NA)
+        return(list(Object = index.class[i], NeighborDirection = NA))
       }
 
 
     } else {
-      obj.nb.angle[[i]] <- list(Object = index.class[i], NeighborDirection = NA)
+      # obj.nb.angle[[i]] <- list(Object = index.class[i], NeighborDirection = NA)
+      return(list(Object = index.class[i], NeighborDirection = NA))
       }# end of if
 
-  } # end of loop
+  # } # end of loop
+    }, obj.inter = obj.inter, index.class = index.class, xy.class.angle = xy.class.angle,
+       xy.class = xy.class, tol = tol, modus = modus)
+
+
+  parallel::stopCluster(cl)
 
 
   # get time of process
   process.time.run <- proc.time() - process.time.start
-  if(quiet == FALSE){cat("------ Run of ClassNeighborFunction: " , process.time.run["elapsed"][[1]]/60, " Minutes ------")}
+  if(quiet == FALSE){cat("------ Run of ClassNeighborFunction: " , round(x = process.time.run["elapsed"][[1]]/60, digits = 4), " Minutes ------ \n")}
 
   if(modus == "bb")
   {

@@ -17,6 +17,7 @@ Imports:
          maptools (>= 0.8.40),
          igraph(>= 1.1.2), 
          mclust (>= 5.2.2),
+         parallel (>= 3.5.0), 
          raster (>= 2.5.8),
          reshape2 (>= 1.4.3),
          rgdal (>= 1.2.4),

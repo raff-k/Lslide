@@ -4,6 +4,7 @@
 #' The length-width vectors for the ratio are computed by a principal component analysis according to YI & MARSHALL (2000)
 #'
 #' @param spdf SpatialPolygonsDataFrame input
+#' @param cores number of cores for parallel processing. Default: 1 (sequential)
 #' @param quiet no outputs in console. Default: TRUE
 #'
 #' @note
@@ -27,7 +28,7 @@
 #'
 #'
 #' @export
-lengthWidthRatio <- function(spdf, quiet = TRUE)
+lengthWidthRatio <- function(spdf, cores = 1, quiet = TRUE)
 {
 
   # get start time of process
@@ -37,10 +38,20 @@ lengthWidthRatio <- function(spdf, quiet = TRUE)
   # spdf <- readspdfPoly(spdffile)
 
   # vector with Ratios
-  vRatio <- c()
+  # vRatio <- c()
 
-  for(i in 1:length(spdf@polygons))
-  {
+  # init parallel
+  cl <- parallel::makeCluster(cores)
+  parallel::clusterExport(cl = cl, envir = environment(),
+                          varlist = c('spdf'))
+
+  parallel::clusterEvalQ(cl, library("sp", "rgeos"))
+
+
+  vRatio <- parallel::parSapply(cl = cl, X = 1:length(spdf@polygons), FUN = function(i, spdf){
+  # vRatio  <- sapply(X = 1:length(spdf@polygons), FUN = function(i, spdf){
+  # for(i in 1:length(spdf@polygons))
+  # {
 
     ### perform principal component analysis
     pca.matrix <- matrix(ncol = 2)
@@ -61,10 +72,10 @@ lengthWidthRatio <- function(spdf, quiet = TRUE)
     v1.y <- eigenvector[2] * eigenvalue[1] # last point of vector 1, y coordinate
     v2.x <- eigenvector[3] * eigenvalue[2] # last point of vector 2, x coordinate
     v2.y <- eigenvector[4] * eigenvalue[2] # last point of vector 2, y coordinate
-    v1 <- SpatialLines(list(Lines(list(Line(cbind(c(pca$center[1], pca$center[1] + v1.x), c(pca$center[2], pca$center[2] + v1.y)))), ID = "v1")))
-    v2 <- SpatialLines(list(Lines(list(Line(cbind(c(pca$center[1], pca$center[1] + v2.x), c(pca$center[2], pca$center[2] + v2.y)))), ID= "v2")))
-    v1.length <- gLength(v1)
-    v2.length <- gLength(v2)
+    v1 <- sp::SpatialLines(list(sp::Lines(list(sp::Line(cbind(c(pca$center[1], pca$center[1] + v1.x), c(pca$center[2], pca$center[2] + v1.y)))), ID = "v1")))
+    v2 <- sp::SpatialLines(list(sp::Lines(list(sp::Line(cbind(c(pca$center[1], pca$center[1] + v2.x), c(pca$center[2], pca$center[2] + v2.y)))), ID= "v2")))
+    v1.length <- rgeos::gLength(v1)
+    v2.length <- rgeos::gLength(v2)
 
     # calculate ratio: larger value is the numerator, s. ecognition reference book (2014, 285)
     if(v1.length >= v2.length)
@@ -77,17 +88,22 @@ lengthWidthRatio <- function(spdf, quiet = TRUE)
     }
 
     # append ratio
-    vRatio <- c(vRatio, ratio)
+    # vRatio <- c(vRatio, ratio)
+    return(ratio)
 
-  } # end for
+  # } # end for
+  }, spdf = spdf) # end lapply
 
-  dt.ratio <- data.table(ID = spdf@data$ID)
+  parallel::stopCluster(cl)
+
+
+  dt.ratio <- data.frame(ID = spdf@data$ID)
   dt.ratio$ratio <- vRatio
 
 
   # get time of process
   process.time.run <- proc.time() - process.time.start
-  if(quiet == FALSE) print(paste0("------ Run of LengthWidthRatio: " , process.time.run["elapsed"][[1]]/60, " Minutes ------"))
+  if(quiet == FALSE) cat(paste0("------ Run of LengthWidthRatio: " , round(x = process.time.run["elapsed"][[1]]/60, digits = 4), " Minutes ------ \n"))
 
 
   return(dt.ratio)

@@ -353,7 +353,7 @@ relationalClassFunction <- function(spdf, nb, class.var, class.var2 = NULL, var,
 
       # create bounding boxes in flow direction of class
       # source("../R/module_BoundingBox.R")
-      bb <- getBoundingBox(shape = x.class, col.name = col.flow, scale.factor = scale.factor.flow, k.centroid = k.centroid.flow,
+      bb <- getBoundingBox(spdf = x.class, col.name = col.flow, scale.factor = scale.factor.flow, k.centroid = k.centroid.flow,
                            k = k.flow, centroid = centroid.flow, set.centroid = set.centroid.flow, scale.side = scale.side.flow, quiet = TRUE)
     } else
     {

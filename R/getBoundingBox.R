@@ -18,6 +18,7 @@
 #' @param centroid centroid is taken for the bounding box. Default: FALSE
 #' @param set.centroid set intial starting point of bounding box with respect to the centroid. Default: "inverse" (alternative: "direction")
 #' @param scale.side side which is scaled in direction. Default: "long" (alternative: small)
+#' @param cores number of cores for parallel processing. Default: 1 (sequential)
 #' @param quiet show output on console. Default: FALSE
 #'
 #' @keywords bounding box, scaled, rotated, direction
@@ -32,7 +33,8 @@
 #'
 #'
 #' @export
-getBoundingBox <- function(spdf, col.name, scale.factor = 2, k = 2, projection = NA, centroid = FALSE, set.centroid = "inverse", k.centroid = 2, scale.side = "long", quiet = TRUE)
+getBoundingBox <- function(spdf, col.name, scale.factor = 2, k = 2, projection = NA, centroid = FALSE, set.centroid = "inverse",
+                           k.centroid = 2, scale.side = "long", cores = 1, quiet = TRUE)
 {
 
   # get start time of process
@@ -74,12 +76,26 @@ getBoundingBox <- function(spdf, col.name, scale.factor = 2, k = 2, projection =
   }
 
   # empty list for SpatialPolygons
-  sp_list <- list()
+  # sp_list <- list()
+
+
+  # init parallel
+  cl <- parallel::makeCluster(cores)
+  parallel::clusterExport(cl = cl, envir = environment(),
+                          varlist = c('angle', 'spdf', 'projection', 'centroid', 'set.centroid',
+                                      'k.centroid', 'k', 'f.scale.factor', 's.scale.factor'))
+
+  parallel::clusterEvalQ(cl, library("sp", "rgeos"))
+
+
+
 
   ### start creation of bounding boxes rotated and scaled in flow direction
   # start loop through polygons ---------------------------------------------
-  for(i in 1:len)
-  {
+  sp_list <- parallel::parLapply(cl = cl, X = 1:len, fun = function(i, angle, spdf, projection, centroid, set.centroid, scale.side, k.centroid, k, f.scale.factor, s.scale.factor){
+  # sp_list <- lapply(X = 1:len, FUN = function(i, angle, spdf, projection, centroid, scale.side, set.centroid, k.centroid, k, f.scale.factor, s.scale.factor){
+  # for(i in 1:len)
+  # {
 
     if(is.na(angle[i]) | angle[i] == -9999 |  angle[i] == "-9999")
     {
@@ -125,8 +141,8 @@ getBoundingBox <- function(spdf, col.name, scale.factor = 2, k = 2, projection =
     # rgeos::gLength(l2)
 
     ### create SpatialPolygon
-    bbox.sp <- SpatialPolygons(list(Polygons(list(Polygon(cbind(x,y))), paste("p", i))))
-    proj4string(bbox.sp) <- projection
+    bbox.sp <- sp::SpatialPolygons(list(sp::Polygons(list(sp::Polygon(cbind(x,y))), paste("p", i))))
+    sp::proj4string(bbox.sp) <- projection
 
     ### get center point of bbox
     center.sp <- sp::coordinates(bbox.sp) # center of bbox
@@ -154,7 +170,7 @@ getBoundingBox <- function(spdf, col.name, scale.factor = 2, k = 2, projection =
 
       } else
       {
-        stop("Wrong Input fpr set.centroid ...")
+        stop("Wrong Input for set.centroid ...")
       }
     }
 
@@ -205,22 +221,29 @@ getBoundingBox <- function(spdf, col.name, scale.factor = 2, k = 2, projection =
 
 
     ### create SpatialPolygon from created points | x: xMin, xMax, xMax, xMin   y: yMin, yMin, yMax, yMax
-    bbox.rot.sp <- SpatialPolygons(list(Polygons(list(Polygon(cbind(c(p1.x, p3.x, p4.x, p2.x), c(p1.y, p3.y, p4.y, p2.y)))), paste("p", i))))
-    proj4string(bbox.rot.sp) <- projection
+    bbox.rot.sp <- sp::SpatialPolygons(list(sp::Polygons(list(sp::Polygon(cbind(c(p1.x, p3.x, p4.x, p2.x), c(p1.y, p3.y, p4.y, p2.y)))), paste("p", i))))
+    sp::proj4string(bbox.rot.sp) <- projection
 
     # put spatial polygon into list
-    sp_list[[i]] <- bbox.rot.sp
-  } # end loop
+    # sp_list[[i]] <- bbox.rot.sp
+    return(bbox.rot.sp)
+
+  # } # end loop
+  }, angle = angle, spdf = spdf, projection = projection, centroid = centroid, k = k, s.scale.factor = s.scale.factor,
+    set.centroid = set.centroid, scale.side = scale.side, k.centroid = k.centroid, f.scale.factor = f.scale.factor) # end lapply
+
+  parallel::stopCluster(cl)
+
 
   # create SpatialPolygonsDataFrame
   # create SpatialPolygonsDataFrame from created SpatialPolygons ---------------------------------------------
-  sp_list_joined <- SpatialPolygons(lapply(sp_list, function(x){x@polygons[[1]]}))
-  spdf <- SpatialPolygonsDataFrame(Sr = sp_list_joined, data = spdf@data["ID"], match.ID = FALSE)
-  proj4string(spdf) <- projection
+  sp_list_joined <- sp::SpatialPolygons(lapply(sp_list, function(x){x@polygons[[1]]}))
+  spdf <- sp::SpatialPolygonsDataFrame(Sr = sp_list_joined, data = spdf@data["ID"], match.ID = FALSE)
+  sp::proj4string(spdf) <- projection
 
   # get running time of process
   process.time.run <- proc.time() - process.time.start
-  if(quiet == FALSE) print(paste0("------ Run of getBoundingBox: " , process.time.run["elapsed"][[1]]/60, " Minutes ------"))
+  if(quiet == FALSE) cat(paste0("------ Run of getBoundingBox: " , round(x = process.time.run["elapsed"][[1]]/60, digits = 4), " Minutes ------ \n"))
 
 
   return(spdf)
