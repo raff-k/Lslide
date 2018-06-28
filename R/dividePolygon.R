@@ -195,11 +195,24 @@ dividePolygon <- function(x, angle = 0, n, trans = TRUE, btol = 0.0001, pgtol = 
   x.crs <- sf::st_crs(x)
 
   # init parallel
-  cl <- parallel::makeCluster(cores)
-  parallel::clusterExport(cl = cl, envir = environment(),
-                          varlist = c('x', 'x.crs', 'angle', 'n', 'btol','pgtol', 'maxit', 'x.cntrd', 'rot', 'rot.inv', 'opt.fun', 'splitByLines'))
+  # init parallel
+  switch(Sys.info()[[1]],
+         Windows = type  <- "PSOCK",
+         Linux = type  <- "FORK",
+         Mac = type <- "FORK")
 
-  parallel::clusterEvalQ(cl, library("sf", "lwgeom"))
+  cl <- parallel::makeCluster(cores, type = type)
+
+  if(Sys.info()[[1]] == "Windows")
+  {
+    parallel::clusterExport(cl = cl, envir = environment(),
+                            varlist = c('x', 'x.crs', 'angle', 'n', 'btol','pgtol', 'maxit', 'x.cntrd', 'rot', 'rot.inv', 'opt.fun', 'splitByLines'))
+
+
+    parallel::clusterEvalQ(cl, library("sf", "lwgeom"))
+  }
+
+
 
 
   # x.div <- parallel::mclapply(mc.cores = mc.cores, X = 1:n.obj, fun = function(i, x, angle, n, btol, pgtol, maxit, x.cntrd, rot, opt.fun, splitByLines){

@@ -76,6 +76,13 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
                                          "Morans I" = double(), "Normalized Morans I" = double(), "Objective Function" = double())
   }
 
+  if(Tool == "High Pass Segmentation")
+  {
+    df.Objective.Function  <- data.frame("Threshold" = double(), "Minsize" = double(), "Intrasegment Variance" = double(), "Normalized Intrasegment Variance" = double(),
+                                         "Morans I" = double(), "Normalized Morans I" = double(), "Objective Function" = double())
+  }
+
+
 
   Objective.Function.save.path.default <- dirname(Segments.Poly)
   print("Calculate Objective Function")
@@ -105,7 +112,7 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
     # perform segmentation
     if(Tool == "SAGA")
     {
-      segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
+      Lslide::segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
                    Fast.Representativeness.LevelOfGeneralisation = i, Seed.Generation.Scale = as.character(i),
                    show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, quiet = quiet, ...)
     } else if(Tool == "GRASS")
@@ -113,21 +120,21 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
       if(Grass.Objective.Function.Method == "Threshold")
       {
         # browser()
-        segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
+        Lslide::segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
                      Grass.Segmentation.Threshold = as.character(i), Grass.Segmentation.Minsize = Grass.Segmentation.Minsize,
                      show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, quiet = quiet, ...)
       }
 
       if(Grass.Objective.Function.Method == "Minsize")
       {
-        segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
+        Lslide::segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
                      Grass.Segmentation.Minsize = i, show.output.on.console = show.output.on.console, quiet = quiet,
                      Grass.Segmentation.Threshold = Grass.Segmentation.Threshold, estimateScaleParameter = TRUE, ...)
       }
 
       if(Grass.Objective.Function.Method == "Seeds")
       {
-        segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
+        Lslide::segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
                      Fast.Representativeness.LevelOfGeneralisation = i, Seed.Generation.Scale = as.character(i),
                      show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, quiet = quiet,
                      Grass.Segmentation.Minsize = Grass.Segmentation.Minsize, Grass.Segmentation.Threshold = Grass.Segmentation.Threshold, ...)
@@ -138,16 +145,19 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
     {
       if(Grass.Objective.Function.Method == "Compactness")
       {
-        segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env, quiet = quiet,
+        Lslide::segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env, quiet = quiet,
                      Grass.SLIC.Compactness = i, show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, ...)
       }
 
       if(Grass.Objective.Function.Method == "Superpixels")
       {
-        segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env, quiet = quiet,
+        Lslide::segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env, quiet = quiet,
                      Grass.SLIC.Superpixels = i, show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, ...)
       }
 
+    } else if(Tool == "High Pass Segmentation")
+    {
+      Lslide::highPassSegmentation(...)
     }
 
     # Grid Statistics -----------------------------------------------------------------------
