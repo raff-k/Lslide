@@ -15,6 +15,7 @@
 #' @param expand maximum expansion distance (radius). Default: 4 [cells]
 #' @param do.buf = FALSE
 #' @param buf.size buffer size in cell's value. Default: 1
+#' @param path.save output path for saving objects. Default: tempdir()
 #' @param NoData no data value. Default: -99999
 #' @param show.output.on.console show output on console. Default: FALSE
 #' @param env.rsaga environment of SAGA GIS. As default, the environment will be automatically estimated. Default: NULL
@@ -36,7 +37,7 @@
 #' @export
 #'
 hiPassThresh <- function(x, scale.factor, threshold, path.output = NULL, do.sieve = TRUE, sieve.mode = "0", sieve.thresh = 4, do.shrink.expand = TRUE, expand = 4,
-                                 do.buf = FALSE, buf.size = 1, NoData = -99999, env.rsaga = NULL, show.output.on.console = FALSE, quiet = TRUE)
+                                 do.buf = FALSE, buf.size = 1, path.save = tempdir(), NoData = -99999, env.rsaga = NULL, show.output.on.console = FALSE, quiet = TRUE)
 {
   # browser()
 
@@ -86,7 +87,7 @@ hiPassThresh <- function(x, scale.factor, threshold, path.output = NULL, do.siev
   if(quiet == FALSE) cat("... thresholding high-pass filter with threshold: ", threshold, "\n")
   thresh.txt <- gsub(pattern = "\\.", replacement = "", x = as.character(threshold))
   formula.grdFil <- paste0("gt(a,", threshold, ")")
-  path.hipassThresh <- file.path(tempdir(), paste0("hipass_", scale.txt, "_", thresh.txt, ".sgrd"))
+  path.hipassThresh <- file.path(path.save, paste0("hipass_", scale.txt, "_", thresh.txt, ".sgrd"))
 
   RSAGA::rsaga.geoprocessor(lib = "grid_calculus", module = 1, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
     GRIDS = path.hipass, FORMULA = formula.grdFil, FNAME = "1", RESULT = path.hipassThresh))
