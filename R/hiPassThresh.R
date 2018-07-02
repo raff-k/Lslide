@@ -37,7 +37,7 @@
 #' @export
 #'
 hiPassThresh <- function(x, scale.factor, threshold, path.output = NULL, do.sieve = TRUE, sieve.mode = "0", sieve.thresh = 4, do.shrink.expand = TRUE, expand = 4,
-                                 do.buf = FALSE, buf.size = 1, path.save = tempdir(), NoData = -99999, env.rsaga = NULL, show.output.on.console = FALSE, quiet = TRUE)
+                                 do.buf = FALSE, buf.size = 1, do.use.temp = FALSE, path.save = tempdir(), NoData = -99999, env.rsaga = NULL, show.output.on.console = FALSE, quiet = TRUE)
 {
   # browser()
 
@@ -76,10 +76,18 @@ hiPassThresh <- function(x, scale.factor, threshold, path.output = NULL, do.siev
   if(quiet == FALSE) cat("... high-pass filter with scale: ", scale.factor, "\n")
 
   scale.txt <- gsub(pattern = "\\.", replacement = "", x = as.character(scale.factor))
-  # RSAGA::rsaga.get.usage(lib = "grid_filter", module = 11, env = env.rsaga)
-  path.hipass <- file.path(tempdir(), paste0("hipass_", scale.txt, ".sgrd"))
-  RSAGA::rsaga.geoprocessor(lib = "grid_filter", module = 11, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
-    GRID = path.x, HIPASS = path.hipass, SCALE = scale.factor))
+  path.hipass <- file.path(path.save, paste0("hipass_", scale.txt, ".sgrd"))
+
+  if(do.use.temp && file.exists(path.hipass))
+  {
+    cat("Tempfile is used! \n")
+
+  } else {
+    # RSAGA::rsaga.get.usage(lib = "grid_filter", module = 11, env = env.rsaga)
+    RSAGA::rsaga.geoprocessor(lib = "grid_filter", module = 11, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+      GRID = path.x, HIPASS = path.hipass, SCALE = scale.factor))
+  }
+
 
 
   ## ... thresholding ----------------------
