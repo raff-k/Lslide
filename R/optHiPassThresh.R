@@ -11,6 +11,7 @@
 #' @param range.threshold range of different thresholds
 #' @param ... see highPassThresholding()
 #' @param cores number of cores for parallel processing. Default: 1 (sequential)
+#' @param path.runfile full path for run file with .txt as ending. Default: NULL
 #' @param quiet no outputs in console. Default: TRUE
 #' @return
 #'  data.frame with clssification measurements ().
@@ -26,7 +27,7 @@
 #'
 #' @export
 #'
-optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, ..., cores = 1, quiet = TRUE)
+optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, path.runfile = NULL, ..., cores = 1, quiet = TRUE)
 {
   ## get start time of process
   process.time.start <- proc.time()
@@ -34,6 +35,11 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, .
   if(!raster::compareRaster(x, inventory, stopiffalse = FALSE))
   {
     stop('Input raster "x" and "inventory" are different either in extent, number of rows and columns, projection, resolution, and/or origin')
+  }
+
+  if(!is.null(path.runfile) && tools::file_path_sans_ext(path.runfile) != "txt")
+  {
+    stop('Format of "path.runfile" is not correct. Should be end with .txt!')
   }
 
   ## init parallel
@@ -55,12 +61,17 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, .
   ## get all combinations
   combi <- expand.grid(threshold = range.threshold, scale = range.scale.factor)[, c(2, 1)] # scale | threshold
 
+
   # result <- apply(X = combi, MARGIN = 1, FUN = function(x, input, inventory, ...){
-  result <- parallel::parApply(cl = cl, X = combi, MARGIN = 1, FUN = function(x, input, inventory, ...){
+  result <- parallel::parApply(cl = cl, X = combi, MARGIN = 1, FUN = function(x, input, inventory, path.runfile, ...){
 
     # browser()
+    if(!is.null(path.runfile))
+    {
+      cat(paste0(x, "\n"), file = path.runfile, append=TRUE)
+    }
 
-     # init variables
+    # init variables
     scale.i <- x[[1]]
     threshold.i <- x[[2]]
 
@@ -133,7 +144,7 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, .
 
     return(df.stat)
 
-  }, input = x, inventory = inventory, ...) # end of (par)apply
+  }, input = x, inventory = inventory, path.runfile = path.runfile, ...) # end of (par)apply
 
   parallel::stopCluster(cl)
 
