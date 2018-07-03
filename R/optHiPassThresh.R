@@ -37,7 +37,7 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, p
     stop('Input raster "x" and "inventory" are different either in extent, number of rows and columns, projection, resolution, and/or origin')
   }
 
-  if(!is.null(path.runfile) && tools::file_path_sans_ext(path.runfile) != "txt")
+  if(!is.null(path.runfile) && tools::file_ext(path.runfile) != "txt")
   {
     stop('Format of "path.runfile" is not correct. Should be end with .txt!')
   }
@@ -62,18 +62,22 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, p
   combi <- expand.grid(threshold = range.threshold, scale = range.scale.factor)[, c(2, 1)] # scale | threshold
 
 
-  # result <- apply(X = combi, MARGIN = 1, FUN = function(x, input, inventory, ...){
-  result <- parallel::parApply(cl = cl, X = combi, MARGIN = 1, FUN = function(x, input, inventory, path.runfile, ...){
+  # result <- lapply(X = 1:nrow(combi), FUN = function(i, combi, input, inventory, path.runfile, ...){
+  result <- parallel::parLapply(cl = cl, X = 1:nrow(combi), fun = function(i, combi, input, inventory, path.runfile, ...){
+  # result <- parallel::parApply(cl = cl, X = combi, MARGIN = 1, FUN = function(x, input, inventory, path.runfile, ...){
 
     # browser()
+
+    combi.i <- combi[i,]
+
     if(!is.null(path.runfile))
     {
-      cat(paste0(x, "\n"), file = path.runfile, append=TRUE)
+      cat(paste0("run: ", i, " from ", nrow(combi), " | " , paste0(unlist(combi.i), collapse = " "), "\n"), file = path.runfile, append=TRUE)
     }
 
     # init variables
-    scale.i <- x[[1]]
-    threshold.i <- x[[2]]
+    scale.i <- combi.i[[1]]
+    threshold.i <- combi.i[[2]]
 
     # get high-pass image
     hipass <- Lslide::hiPassThresh(x = input, scale.factor = scale.i, threshold = threshold.i, ...)
@@ -144,7 +148,7 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, p
 
     return(df.stat)
 
-  }, input = x, inventory = inventory, path.runfile = path.runfile, ...) # end of (par)apply
+  }, combi = combi, input = x, inventory = inventory, path.runfile = path.runfile, ...) # end of (par)apply
 
   parallel::stopCluster(cl)
 
