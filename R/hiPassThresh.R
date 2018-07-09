@@ -15,6 +15,7 @@
 #' @param expand maximum expansion distance (radius). Default: 4 [cells]
 #' @param do.buf = FALSE
 #' @param buf.size buffer size in cell's value. Default: 1
+#' @param do.use.temp already existing files are used. Default: FALSE
 #' @param path.save output path for saving objects. Default: tempdir()
 #' @param NoData no data value. Default: -99999
 #' @param show.output.on.console show output on console. Default: FALSE
@@ -97,9 +98,11 @@ hiPassThresh <- function(x, scale.factor, threshold, path.output = NULL, do.siev
   formula.grdFil <- paste0("gt(a,", threshold, ")")
   path.hipassThresh <- file.path(path.save, paste0("hipass_", scale.txt, "_", thresh.txt, ".sgrd"))
 
-  RSAGA::rsaga.geoprocessor(lib = "grid_calculus", module = 1, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
-    GRIDS = path.hipass, FORMULA = formula.grdFil, FNAME = "1", RESULT = path.hipassThresh))
-
+  if(!file.exists(path.hipassThresh) || !do.use.temp)
+  {
+    RSAGA::rsaga.geoprocessor(lib = "grid_calculus", module = 1, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+      GRIDS = path.hipass, FORMULA = formula.grdFil, FNAME = "1", RESULT = path.hipassThresh))
+  }
 
   ## ... sieving and clump ----------------------
   if(do.sieve && sieve.thresh > 2) # 2 is minumum
@@ -109,8 +112,11 @@ hiPassThresh <- function(x, scale.factor, threshold, path.output = NULL, do.siev
 
     # RSAGA::rsaga.get.usage(lib = "grid_filter", module = 15, env = env.rsaga)
     # MODE: [0] Neumann, [1] Moore
-    RSAGA::rsaga.geoprocessor(lib = "grid_filter", module = 15, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
-      INPUT = path.hipassThresh, OUTPUT = path.hipassThresh, MODE = sieve.mode, THRESHOLD = sieve.thresh, ALL = "1"))
+    if(!file.exists(path.hipassThresh) || !do.use.temp)
+    {
+      RSAGA::rsaga.geoprocessor(lib = "grid_filter", module = 15, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+        INPUT = path.hipassThresh, OUTPUT = path.hipassThresh, MODE = sieve.mode, THRESHOLD = sieve.thresh, ALL = "1"))
+    }
   }
 
 
@@ -122,16 +128,22 @@ hiPassThresh <- function(x, scale.factor, threshold, path.output = NULL, do.siev
     # OPERATION: [3] expand and shrink
     # CIRCLE: [1] Circle
     # EXPAND: [3] majority
-    RSAGA::rsaga.geoprocessor(lib = "grid_tools", module = 28, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
-      INPUT = path.hipassThresh, RESULT = path.hipassThresh, OPERATION = "3", CIRCLE = "1", RADIUS = expand, EXPAND = "3"))
+    if(!file.exists(path.hipassThresh) || !do.use.temp)
+    {
+      RSAGA::rsaga.geoprocessor(lib = "grid_tools", module = 28, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+        INPUT = path.hipassThresh, RESULT = path.hipassThresh, OPERATION = "3", CIRCLE = "1", RADIUS = expand, EXPAND = "3"))
+    }
   }
 
 
   ## ... set 0 to NO DATA ----------------------
   # RSAGA::rsaga.get.usage(lib = "grid_tools", module = 15, env = env.rsaga)
-  RSAGA::rsaga.geoprocessor(lib = "grid_tools", module = 15, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
-    INPUT = path.hipassThresh, RESULT = path.hipassThresh, METHOD = "0", OLD = 0, NEW = NoData, SOPERATOR = "0",
-    RESULT_NODATA_CHOICE = "1", RESULT_NODATA_VALUE = NoData))
+  if(!file.exists(path.hipassThresh) || !do.use.temp)
+  {
+    RSAGA::rsaga.geoprocessor(lib = "grid_tools", module = 15, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+      INPUT = path.hipassThresh, RESULT = path.hipassThresh, METHOD = "0", OLD = 0, NEW = NoData, SOPERATOR = "0",
+      RESULT_NODATA_CHOICE = "1", RESULT_NODATA_VALUE = NoData))
+  }
 
 
   if(do.buf && buf.size > 0)
@@ -142,9 +154,12 @@ hiPassThresh <- function(x, scale.factor, threshold, path.output = NULL, do.siev
   ## ... buffer data
   # RSAGA::rsaga.get.usage(lib = "grid_tools", module = 8, env = env.rsaga)
   # [1] cell's value
-  RSAGA::rsaga.geoprocessor(lib="grid_tools", module = 8, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
-     FEATURES = path.hipassThresh, BUFFER = path.hipassThresh, DISTANCE = buf.size, TYPE = "1"))
-  }
+    if(!file.exists(path.hipassThresh) || !do.use.temp)
+    {
+      RSAGA::rsaga.geoprocessor(lib="grid_tools", module = 8, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+        FEATURES = path.hipassThresh, BUFFER = path.hipassThresh, DISTANCE = buf.size, TYPE = "1"))
+    }
+   }
 
 
   ## ... load data

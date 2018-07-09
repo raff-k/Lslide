@@ -40,6 +40,8 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, p
   if(!is.null(path.runfile) && tools::file_ext(path.runfile) != "txt")
   {
     stop('Format of "path.runfile" is not correct. Should be end with .txt!')
+  } else if(!is.null(path.runfile)) {
+    cat(paste0("run", "\t", "total", "\t", "scale",  "\t", "threshold", "\t", "TN", "\t", "FN", "\t", "FP", "\t", "TP", "\t", "TPR", "\t", "TNR", "\t", "FNR", "\t", "FPR", "\t", "acc", "\t", "rndm_acc", "\t", "f1score", "\t", "quality", "\t", "Kappa", "\n"), file = path.runfile, append = TRUE)
   }
 
   ## init parallel
@@ -67,86 +69,104 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, p
   # result <- parallel::parApply(cl = cl, X = combi, MARGIN = 1, FUN = function(x, input, inventory, path.runfile, ...){
 
     # browser()
+      combi.i <- combi[i,]
 
-    combi.i <- combi[i,]
+      # init variables
+      scale.i <- combi.i[[1]]
+      threshold.i <- combi.i[[2]]
 
-    if(!is.null(path.runfile))
-    {
-      cat(paste0("run: ", i, " from ", nrow(combi), " | " , paste0(unlist(combi.i), collapse = " "), "\n"), file = path.runfile, append=TRUE)
-    }
+    tryCatch({
 
-    # init variables
-    scale.i <- combi.i[[1]]
-    threshold.i <- combi.i[[2]]
+      # get high-pass image
+      hipass <- Lslide::hiPassThresh(x = input, scale.factor = scale.i, threshold = threshold.i, ...)
 
-    # get high-pass image
-    hipass <- Lslide::hiPassThresh(x = input, scale.factor = scale.i, threshold = threshold.i, ...)
+      # resetNull data
+      hipass <- raster::calc(x = hipass, fun = function(x){ifelse(is.na(x), 0, 2)})
 
-    # resetNull data
-    hipass <- raster::calc(x = hipass, fun = function(x){ifelse(is.na(x), 0, 2)})
+      # overlay data
+      result <- raster::overlay(x = hipass, y = inventory, fun = sum, na.rm = TRUE)
 
-    # overlay data
-    result <- raster::overlay(x = hipass, y = inventory, fun = sum, na.rm = TRUE)
+      # get statistics
 
-    # get statistics
+      # ... create data frames
+      stat <- table(raster::values(result))
+      df.scale <- data.frame(scale = scale.i, threshold = threshold.i)
+      df.stat <- data.frame(matrix(ncol = length(stat), nrow = 1))
+      colnames(df.stat) <- names(stat)
+      df.stat[1, ] <- stat
+      df.stat <- cbind(df.scale, df.stat)
 
-    # ... create data frames
-    stat <- table(raster::values(result))
-    df.scale <- data.frame(scale = scale.i, threshold = threshold.i)
-    df.stat <- data.frame(matrix(ncol = length(stat), nrow = 1))
-    colnames(df.stat) <- names(stat)
-    df.stat[1, ] <- stat
-    df.stat <- cbind(df.scale, df.stat)
+      # ... # 0: TRUE NEGATIVES (TN), 3: TRUE POSITIVES (TP), 1: FALSE NEGATIVES, 2: FALSE POSITIVES
+      pos.TN <- grep(pattern = "0", x = colnames(df.stat))
+      pos.FN <- grep(pattern = "1", x = colnames(df.stat))
+      pos.FP <- grep(pattern = "2", x = colnames(df.stat))
+      pos.TP <- grep(pattern = "3", x = colnames(df.stat))
 
-    # ... # 0: TRUE NEGATIVES (TN), 3: TRUE POSITIVES (TP), 1: FALSE NEGATIVES, 2: FALSE POSITIVES
-    pos.TN <- grep(pattern = "0", x = colnames(df.stat))
-    pos.FN <- grep(pattern = "1", x = colnames(df.stat))
-    pos.FP <- grep(pattern = "2", x = colnames(df.stat))
-    pos.TP <- grep(pattern = "3", x = colnames(df.stat))
+      if(length(pos.TN) > 0) {
+        colnames(df.stat)[pos.TN] <- "TN"
+      } else {
+        df.stat$TN <- 0
+      }
 
-    if(length(pos.TN) > 0) {
-      colnames(df.stat)[pos.TN] <- "TN"
-    } else {
-      df.stat$TN <- 0
-    }
+      if(length(pos.FN) > 0) {
+        colnames(df.stat)[pos.FN] <- "FN"
+      } else {
+        df.stat$FN <- 0
+      }
 
-    if(length(pos.FN) > 0) {
-      colnames(df.stat)[pos.FN] <- "FN"
-    } else {
-      df.stat$FN <- 0
-    }
+      if(length(pos.FP) > 0) {
+        colnames(df.stat)[pos.FP] <- "FP"
+      } else {
+        df.stat$FP <- 0
+      }
 
-    if(length(pos.FP) > 0) {
-      colnames(df.stat)[pos.FP] <- "FP"
-    } else {
-      df.stat$FP <- 0
-    }
+      if(length(pos.TP) > 0) {
+        colnames(df.stat)[pos.TP] <- "TP"
+      } else {
+        df.stat$TP <- 0
+      }
 
-    if(length(pos.TP) > 0) {
-      colnames(df.stat)[pos.TP] <- "TP"
-    } else {
-      df.stat$TP <- 0
-    }
+      # ... confusion matrix error measurements
+      df.stat$TPR <- tryCatch({df.stat$TP/(df.stat$TP + df.stat$FN)}, error = function(e){return(NA)})  # sensitivity, recall, hit rate, or true positive rate (TPR)
+      df.stat$TNR <- tryCatch({df.stat$TN/(df.stat$TN + df.stat$FP)}, error = function(e){return(NA)})  # specificity or true negative rate (TNR)
+      df.stat$FNR <- tryCatch({df.stat$FN/(df.stat$FN + df.stat$TP)}, error = function(e){return(NA)})  # miss rate or false negative rate (FNR)
+      df.stat$FPR <- tryCatch({df.stat$FP/(df.stat$FP + df.stat$TN)}, error = function(e){return(NA)})  # miss rate or false negative rate (FPR)
+      df.stat$acc <- tryCatch({(df.stat$TP + df.stat$TN)/(df.stat$TP + df.stat$TN + df.stat$FP + df.stat$FN)}, error = function(e){return(NA)})  # accuracy (ACC)
 
-    # ... confusion matrix error measurements
-    df.stat$TPR <- tryCatch({df.stat$TP/(df.stat$TP + df.stat$FN)}, error = function(e){return(NA)})  # sensitivity, recall, hit rate, or true positive rate (TPR)
-    df.stat$TNR <- tryCatch({df.stat$TN/(df.stat$TN + df.stat$FP)}, error = function(e){return(NA)})  # specificity or true negative rate (TNR)
-    df.stat$FNR <- tryCatch({df.stat$FN/(df.stat$FN + df.stat$TP)}, error = function(e){return(NA)})  # miss rate or false negative rate (FNR)
-    df.stat$FPR <- tryCatch({df.stat$FP/(df.stat$FP + df.stat$TN)}, error = function(e){return(NA)})  # miss rate or false negative rate (FPR)
-    df.stat$acc <- tryCatch({(df.stat$TP + df.stat$TN)/(df.stat$TP + df.stat$TN + df.stat$FP + df.stat$FN)}, error = function(e){return(NA)})  # accuracy (ACC)
+      # ... hard-coded data.frame numbers here!
+      df.stat$rndm_acc <- tryCatch({((as.numeric(df.stat$TN + df.stat$FP) * as.numeric(df.stat$TN + df.stat$FN)) + (as.numeric(df.stat$FN + df.stat$TP) * as.numeric(df.stat$FP + df.stat$TP)))/(as.numeric(sum(df.stat[1, 3:6])) * as.numeric(sum(df.stat[1, 3:6])))}, error = function(e){return(NA)})
+      df.stat$f1score <- tryCatch({(2*df.stat$TP)/((2*df.stat$TP) + df.stat$FP + df.stat$FN)}, error = function(e){return(NA)})  # F1 score is the harmonic mean of precision and sensitivity
 
-    # ... hard-coded data.frame numbers here!
-    df.stat$rndm_acc <- tryCatch({((as.numeric(df.stat$TN + df.stat$FP) * as.numeric(df.stat$TN + df.stat$FN)) + (as.numeric(df.stat$FN + df.stat$TP) * as.numeric(df.stat$FP + df.stat$TP)))/(as.numeric(sum(df.stat[1, 3:6])) * as.numeric(sum(df.stat[1, 3:6])))}, error = function(e){return(NA)})
-    df.stat$f1score <- tryCatch({(2*df.stat$TP)/((2*df.stat$TP) + df.stat$FP + df.stat$FN)}, error = function(e){return(NA)})  # F1 score is the harmonic mean of precision and sensitivity
-
-    df.stat$quality <- tryCatch({(df.stat$TP)/(df.stat$TP + df.stat$FP + df.stat$FN)}, error = function(e){return(NA)})  # Tarolli et al. 2012:77, Heipke et al. (1997)
+      df.stat$quality <- tryCatch({(df.stat$TP)/(df.stat$TP + df.stat$FP + df.stat$FN)}, error = function(e){return(NA)})  # Tarolli et al. 2012:77, Heipke et al. (1997)
 
 
-    # J. Richard Landis and Gary G. Koch - The Measurement of Observer Agreement for Categorical Data, Biometrics, Vol. 33, No. 1 (Mar., 1977), pp. 159-174.
-    # http://standardwisdom.com/softwarejournal/2011/12/confusion-matrix-another-single-value-metric-kappa-statistic/
-    df.stat$Kappa <- tryCatch({(df.stat$acc - df.stat$rndm_acc)/(1 - df.stat$rndm_acc)}, error = function(e){return(NA)})
+      # J. Richard Landis and Gary G. Koch - The Measurement of Observer Agreement for Categorical Data, Biometrics, Vol. 33, No. 1 (Mar., 1977), pp. 159-174.
+      # http://standardwisdom.com/softwarejournal/2011/12/confusion-matrix-another-single-value-metric-kappa-statistic/
+      df.stat$Kappa <- tryCatch({(df.stat$acc - df.stat$rndm_acc)/(1 - df.stat$rndm_acc)}, error = function(e){return(NA)})
 
-    return(df.stat)
+
+      if(!is.null(path.runfile))
+      {
+        cat(paste0(i, "\t", nrow(combi), "\t", scale.i, "\t", threshold.i, "\t", df.stat$TN, "\t", df.stat$FN, "\t", df.stat$FP, "\t", df.stat$TP,
+                   "\t", df.stat$TPR, "\t", df.stat$TNR, "\t", df.stat$FNR, "\t", df.stat$FPR, "\t", df.stat$acc, "\t", df.stat$rndm_acc, "\t", df.stat$f1score, "\t", df.stat$quality, "\t", df.stat$Kappa, "\n"), file = path.runfile, append=TRUE)
+      }
+
+      return(df.stat)
+
+    }, error = function(e){
+
+      cat(paste0(i, "\t", nrow(combi), "\t", scale.i, "\t", threshold.i, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA,
+                 "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\n"), file = path.runfile, append=TRUE)
+
+      df.scale <- data.frame(scale = scale.i, threshold = threshold.i)
+      df.stat <- data.frame(matrix(ncol = 13, nrow = 1))
+      colnames(df.stat) <- c("TN",  "FN",  "FP",  "TP",  "TPR",  "TNR",  "FNR",  "FPR",  "acc",  "rndm_acc",  "f1score",  "quality",  "Kappa")
+      df.stat[1, ] <- NA
+      df.stat <- cbind(df.scale, df.stat)
+
+      return(df.stat)
+      })
+
 
   }, combi = combi, input = x, inventory = inventory, path.runfile = path.runfile, ...) # end of (par)apply
 
