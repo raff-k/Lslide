@@ -11,7 +11,9 @@
 #' @param range.threshold range of different thresholds
 #' @param ... see highPassThresholding()
 #' @param cores number of cores for parallel processing. Default: 1 (sequential)
+#' @param NoData = -99999
 #' @param path.runfile full path for run file with .txt as ending. Default: NULL
+#' @param env.rsaga
 #' @param quiet no outputs in console. Default: TRUE
 #' @return
 #'  data.frame with clssification measurements ().
@@ -27,7 +29,7 @@
 #'
 #' @export
 #'
-optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, path.runfile = NULL, ..., cores = 1, quiet = TRUE)
+optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, path.runfile = NULL, env.rsaga, path.save = tempdir(), NoData = -99999, ..., cores = 1, quiet = TRUE)
 {
   ## get start time of process
   process.time.start <- proc.time()
@@ -44,41 +46,33 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, p
     cat(paste0("run", "\t", "total", "\t", "scale",  "\t", "threshold", "\t", "TN", "\t", "FN", "\t", "FP", "\t", "TP", "\t", "TPR", "\t", "TNR", "\t", "FNR", "\t", "FPR", "\t", "acc", "\t", "rndm_acc", "\t", "f1score", "\t", "quality", "\t", "Kappa", "\n"), file = path.runfile, append = TRUE)
   }
 
-  ## init parallel
-  switch(Sys.info()[[1]],
-         Windows = type  <- "PSOCK",
-         Linux = type  <- "FORK",
-         Mac = type <- "FORK")
-
-  cl <- parallel::makeCluster(cores, type = type)
-
-  if(Sys.info()[[1]] == "Windows")
+  if(class(x) == "RasterLayer")
   {
-    parallel::clusterExport(cl = cl, varlist = names(environment()), envir = environment())
+    path.x <- file.path(tempdir(), "input.sgrd")
+    raster::writeRaster(x = x, filename = paste0(tools::file_path_sans_ext(path.x), ".sdat"), overwrite = TRUE, NAflag = NoData)
+  } else {
+    path.x <- x
   }
 
-  if(cores == 1){if(quiet == FALSE) cat("... start finding optimal hyper-parameters (sequentiel) \n")}
-  if(cores > 1){if(quiet == FALSE) cat("... start finding optimal hyper-parameters (parallel) \n")}
 
-  ## get all combinations
-  combi <- expand.grid(threshold = range.threshold, scale = range.scale.factor)[, c(2, 1)] # scale | threshold
-
-
-  # result <- lapply(X = 1:nrow(combi), FUN = function(i, combi, input, inventory, path.runfile, ...){
-  result <- parallel::parLapply(cl = cl, X = 1:nrow(combi), fun = function(i, combi, input, inventory, path.runfile, ...){
-  # result <- parallel::parApply(cl = cl, X = combi, MARGIN = 1, FUN = function(x, input, inventory, path.runfile, ...){
+  ## init run function
+  intern.runFun <- function(i, combi, input, inventory, path.runfile, env.rsaga = env.rsaga, path.save, NoData, ...){
+    # result <- parallel::parApply(cl = cl, X = combi, MARGIN = 1, FUN = function(x, input, inventory, path.runfile, ...){
 
     # browser()
-      combi.i <- combi[i,]
+    combi.i <- combi[i,]
 
-      # init variables
-      scale.i <- combi.i[[1]]
-      threshold.i <- combi.i[[2]]
+    # init variables
+    scale.i <- combi.i[[1]]
+    threshold.i <- combi.i[[2]]
 
     tryCatch({
 
       # get high-pass image
-      hipass <- Lslide::hiPassThresh(x = input, scale.factor = scale.i, threshold = threshold.i, ...)
+      hipass <- Lslide::hiPassThresh(x = input, scale.factor = scale.i, threshold = threshold.i, do.use.temp.HPF = TRUE, env.rsaga = env.rsaga, path.save = path.save, NoData = NoData, ...)
+      hipass.val <- unique(raster::values(hipass))
+
+      if(length(hipass.val) == 1 && is.na(hipass.val)) {stop("Raster contains only NAs")}
 
       # resetNull data
       hipass <- raster::calc(x = hipass, fun = function(x){ifelse(is.na(x), 0, 2)})
@@ -154,9 +148,11 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, p
       return(df.stat)
 
     }, error = function(e){
-
-      cat(paste0(i, "\t", nrow(combi), "\t", scale.i, "\t", threshold.i, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA,
+      if(!is.null(path.runfile))
+      {
+        cat(paste0(i, "\t", nrow(combi), "\t", scale.i, "\t", threshold.i, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA,
                  "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\t", NA, "\n"), file = path.runfile, append=TRUE)
+      }
 
       df.scale <- data.frame(scale = scale.i, threshold = threshold.i)
       df.stat <- data.frame(matrix(ncol = 13, nrow = 1))
@@ -165,12 +161,64 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, p
       df.stat <- cbind(df.scale, df.stat)
 
       return(df.stat)
-      })
+    })
+ } # end of runFun
 
 
-  }, combi = combi, input = x, inventory = inventory, path.runfile = path.runfile, ...) # end of (par)apply
+  ## init high-pass function
+  intern.hiPassFun <- function(path.x, path.save, env.rsaga, scale.factor, show.output.on.console = FALSE)
+  {
+    scale.txt <- gsub(pattern = "\\.", replacement = "", x = as.character(scale.factor))
+    path.hipass <- file.path(path.save, paste0("hipass_", scale.txt, ".sgrd"))
 
-  parallel::stopCluster(cl)
+    # RSAGA::rsaga.get.usage(lib = "grid_filter", module = 11, env = env.rsaga)
+      RSAGA::rsaga.geoprocessor(lib = "grid_filter", module = 11, env = env.rsaga, show.output.on.console = show.output.on.console, param = list(
+        GRID = path.x, HIPASS = path.hipass, SCALE = scale.factor))
+  } # end of intern.hiPassFun
+
+
+
+
+  ## get all combinations
+  combi <- expand.grid(threshold = range.threshold, scale = range.scale.factor)[, c(2, 1)] # scale | threshold
+
+  # sequential processing
+  if(cores == 1){
+    if(quiet == FALSE) cat("... start finding optimal hyper-parameters (sequentiel) \n")
+    if(quiet == FALSE) cat("... ... generation of high-pass filtered images \n")
+    noOutput <- lapply(X = range.scale.factor, FUN = intern.hiPassFun, path.x = path.x,  env.rsaga = env.rsaga, path.save = path.save)
+
+    if(quiet == FALSE) cat("... ... generation of thesholding images \n")
+    result <- lapply(X = 1:nrow(combi), FUN = intern.runFun, combi = combi, input = path.x, inventory = inventory, path.runfile = path.runfile, env.rsaga = env.rsaga, path.save = path.save, NoData = NoData, ...)
+  }
+
+
+  # parallel processing
+  if(cores > 1){
+
+    if(quiet == FALSE) cat("... start finding optimal hyper-parameters (parallel) \n")
+
+    ## init parallel
+    switch(Sys.info()[[1]],
+           Windows = type  <- "PSOCK",
+           Linux = type  <- "FORK",
+           Mac = type <- "FORK")
+
+    cl <- parallel::makeCluster(cores, type = type)
+
+    if(Sys.info()[[1]] == "Windows")
+    {
+      parallel::clusterExport(cl = cl, varlist = names(environment()), envir = environment())
+    }
+
+    if(quiet == FALSE) cat("... ... generation of high-pass filtered images \n")
+    noOutput <- parallel::parLapply(cl = cl, X = range.scale.factor, fun = intern.hiPassFun, path.x = path.x,  env.rsaga = env.rsaga, path.save = path.save)
+
+    if(quiet == FALSE) cat("... ... generation of thesholding images \n")
+    result <- parallel::parLapply(cl = cl, X = 1:nrow(combi), fun = intern.runFun, combi = combi, input = path.x, inventory = inventory, path.runfile = path.runfile, env.rsaga = env.rsaga, path.save = path.save, NoData = NoData, ...) # end of (par)apply
+
+    parallel::stopCluster(cl)
+  }
 
   # ... row bind lists
   result <- dplyr::bind_rows(result)
