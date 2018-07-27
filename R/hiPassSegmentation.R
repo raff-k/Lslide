@@ -9,49 +9,33 @@
 #'
 #' @param input.filter \linkS4class{RasterLayer} on which the filtering is applied
 #' @param input.segmentation \linkS4class{RasterLayer} for segmentation. Default: input.filter
-#' @param offset Offset of values in filter matrix. Default: 0.06
-#' @param makeBrush.size matrix size for smoothing input.filter. Default: 25
-#' @param makeBrush.shape form of smoothin matrix. Default: "disc"
-#' @param NA.val.in replace value for no data (NA) in \emph{input.filter}. Default: 0
-#' @param fill.holes polygon segmentation output contains holes. Default: FALSE
-#' @param clump.thresh area thresholds for removing clumbs - measured in cell sizes. Default: NULL
-#' @param clump.directions directions for "clump-searching". Default: 8
 #' @param env.rsaga environment of SAGA GIS. Default: RSAGA::rsaga.env()
-#' @param CFR.buf buffer applied on contrast-filter-results, measured in cell-sizes. Default: "1"
-#' @param output.path path for output files. Default: tempdir()
-#' @param writeCFRaster write contrast-filter results. Default: FALSE
 #' @param writeRaster.NAflag NoData values for NA values in raster. Default: -99999
-#' @param freeMemory free memory after contrast filtering. Default: TRUE
 #' @param show.output.on.console show output of tools on console. Default: FALSE
 #' @param Fast.Representativeness.LevelOfGeneralisation level of generalisation for computing seed points. Default: "2.0"
 #' @param quiet do not show comments and process time in console. Default: TRUE
 #' @param Grass.Segmentation.Threshold threshold used of merging segments. Default: 0.24
 #' @param Grass.Segmentation.Minsize minsize of a segment. Default: 0
 #' @param Grass.Segmentation.Memory memory used in computation. Default: 1024
-#' @param defaultGrass GRASS GIS environmet for temporal setup, see package link2GI. Default: c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64")
 #' @param Segments.Poly output location for segmented objects (shapefile). Default: paste0(tempdir(), "/", "outSegPoly.shp")
 #' @param Segments.Grid output location for segmented grid. Default: paste0(tempdir(), "/", "outSegGrid.sgrd")
+#' @param estimateScaleParameter must be only be TRUE when scale parameter function is used. Default: FALSE
+#' @param ... parameters for function hiPassThresh
 #'
 #' @return
 #' \linkS4class{SpatialPolygonsDataFrame} containing the segments/objects
 #'
 #'
-#' @note
-#' \itemize{
-#'   \item \emph{r} is stretched to gray-scale (0-255) during process by linear normalization
-#' }
-#'
-#'
-#' @keywords EBImage, raster, gray-scale-image, matrix, conversion, seeded-region growing, SAGA
+#' @keywords SAGA GIS, raster, high-pass filtering, matrix, conversion, seeded-region growing, GRASS GIS
 #'
 #'
 #' @export
 # input filter and input segmentation should have same extent and projection
 
-hiPassSegmentation <- function(input.filter, input.segmentation = input.filter, offset = 0.06, makeBrush.size = 25, makeBrush.shape = "disc", NA.val.in = 0, clump.thresh = NULL, clump.directions = 4, env.rsaga = RSAGA::rsaga.env(),
-                                       CFR.buf = 1, output.path = tempdir(), writeCFRaster = FALSE, writeRaster.NAflag = -99999, freeMemory = TRUE, show.output.on.console = FALSE, quiet = TRUE, morph.Closing = TRUE, closing.size = 3, closing.shape = "box",
+hiPassSegmentation <- function(input.filter, input.segmentation = input.filter, result.filter = NULL, scale.factor, threshold, env.rsaga = RSAGA::rsaga.env(),
+                                       writeRaster.NAflag = -99999, show.output.on.console = FALSE, quiet = TRUE,
                                        Grass.Segmentation.Threshold = 0.24, Grass.Segmentation.Minsize = 1, Grass.Segmentation.Memory = 1024, Segments.Poly =  file.path(tempdir(), "outSegPoly.shp"),   Segments.Grid = file.path(tempdir(), "outSegGrid.sgrd"),
-                                       defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"), load.output = FALSE, fill.holes = FALSE, ...)
+                                       load.output = FALSE, fill.holes = FALSE, estimateScaleParameter = FALSE, ...)
 {
 
   # browser()
@@ -60,7 +44,14 @@ hiPassSegmentation <- function(input.filter, input.segmentation = input.filter, 
   if(quiet == FALSE) cat("Start High-Pass-Segmentation ...\n")
 
   # Start high-pass filter -----------------
-  hipass <- Lslide::hiPassThresh()
+  if(!is.null(result.filter) && class(result.filter) == "RasterLayer")
+  {
+    hipass <- result.filter
+    if(quiet == FALSE) cat('... input of "result.filter" is used as high-pass filter ...\n')
+  } else {
+    hipass <- Lslide::hiPassThresh(x = input.filter, scale.factor, threshold, NoData = writeRaster.NAflag ,
+                                   env.rsaga = env.rsaga, show.output.on.console = show.output.on.console, quiet = quiet,...)
+  }
 
 
   # mask segmentation input to filter
@@ -140,14 +131,25 @@ hiPassSegmentation <- function(input.filter, input.segmentation = input.filter, 
   {
     rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
       input = "Segments_Poly", output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
+
+    if(estimateScaleParameter)
+    {
+      rgrass7::execGRASS("v.in.ogr", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+        input = Segments.Poly, output = "Segments_Poly"))
+    }
+
   } else {
-    rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = "Segments_Poly", output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
+
+    if(!estimateScaleParameter)
+    {
+      rgrass7::execGRASS("v.out.ogr", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+        input = "Segments_Poly", output = Segments.Poly, type = "area", format = "ESRI_Shapefile"))
+    }
   }
 
 
 
-  if(load.output == TRUE)
+  if(load.output == TRUE && !estimateScaleParameter)
   {
     if(quiet == FALSE) cat("... Loading Segments: Using sf::() and conversion to SpatialPolygonsDataFrame\n")
     outpoly <- sf::st_read(Segments.Poly, quiet = !show.output.on.console)
@@ -167,75 +169,4 @@ hiPassSegmentation <- function(input.filter, input.segmentation = input.filter, 
 
 } # end function highPassSegmentation
 
-
-
-
-
-# EXAMPLE -----------------------------------
-# library("RQGIS", "reticulate")
-# open_app()
-# pacman::p_load("EBImage", "raster", "data.table", "igraph", "RQGIS", "reticulate", "RSAGA", "rgrass7", "link2GI")
-#
-# env.rsaga <- RSAGA::rsaga.env(path = "C:/Program Files (x86)/SAGA-GIS")
-#
-# setwd("E:/Masterarbeit/Data/Output/Segmentation/EBImage")
-# # save.image("cFS_run.RDat")
-# load("cFS_run.RDat")
-# slope <- raster("Input/OP14_slp_01m.tif")
-#
-# dem <- RQGIS::dem
-# slope <- RQGIS::run_qgis(alg  = "grass7:r.slope.aspect", elevation = dem, slope = "slope.tif", load_output = TRUE)
-#
-#
-#
-# # ------ Run of contrastFilterSegmentation: 9.63516666666667 Minutes ------
-# segments <- contrastFilterSegmentation(input.filter = slope, makeBrush.size = 25, offset = 0.07, env.rsaga = env.rsaga, show.output.on.console = FALSE, quiet = FALSE,
-#                                        Grass.Segmentation.Threshold =  0.02, Grass.Segmentation.Minsize = 50, clump.directions = 4, clump.thresh = 50, freeMemory = TRUE,
-#                                        Segments.Poly = paste0(getwd(), "/Output/cFS_Mb25Of007_ClD4T50_SgT002Sz50.shp"), Segments.Grid = paste0(getwd(), "/Output/cFS_Mb25Of007_ClD4T50_SgT002Sz50.sgrd"))
-#
-#
-
-
-# # testing:
-# save.image("cFS_Debugging_b4Segmentaion.RData")
-# load("cFS_Debugging_b4Segmentaion.RData")
-# input.filter = slope
-# makeBrush.size = 25
-# env.rsaga = env.rsaga
-# show.output.on.console = FALSE
-# quiet = FALSE
-# input.segmentation = input.filter
-# offset = 0.07
-# makeBrush.shape = "disc"
-# NA.val.in = 0
-# clump.thresh = 50
-# clump.directions = 4
-# CFR.buf = "1"
-# output.path = tempdir()
-# writeCFRaster = FALSE
-# writeRaster.NAflag = -99999
-# freeMemory = TRUE
-# # Saga.Segmentation.Sig.2 = "125"
-# # Saga.Segmentation.Leafsize = 1024
-# Grass.Segmentation.Threshold = 0.02
-# Grass.Segmentation.Minsize = 50
-# Grass.Segmentation.Memory = 1024
-# Segments.Poly =  paste0(tempdir(),  "outSegPoly.shp")
-# Segments.Grid = paste0(tempdir(), "outSegGrid.sgrd")
-# defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64")
-
-# debug
-# debug.InSeedsMasked <- raster::raster(paste0(tools::file_path_sans_ext(Output.Seeds.Masked), ".sdat"))
-# raster::writeRaster(x = debug.InSeedsMasked, filename = paste0(getwd(), "/Debug/seedsMaksed.tif"))
-# raster::writeRaster(x = input.segmentation, filename = paste0(getwd(), "/Debug/inputSegmentation.tif"))
-#
-# debug.SegmentsGrid <- raster::raster(paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"))
-# raster::writeRaster(x = debug.SegmentsGrid, filename = paste0(getwd(), "/Debug/outputSegmentation_SAGA.tif"))
-#
-#
-#
-# input.segmentation.NA <- raster::writeRaster(input.segmentation, paste0(getwd(),"/Debug/inputSegmentationTest.tif"), NAflag = -9999)
-# input.segmentation.NA <- raster::raster(input.segmentation.NA)
-# segmentation.GRASS <-  RQGIS::run_qgis(alg = "grass7:i.segment", input = input.segmentation.NA, threshold = "0.05", minsize = "50", iterations = "20",
-#                                        output = "tmpGrassSegmt.tif", load_output = TRUE, show_output_paths = TRUE)
 

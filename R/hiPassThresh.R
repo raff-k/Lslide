@@ -8,7 +8,7 @@
 #' @param scale.factor
 #' @param threshold
 #' @param path.output = NULL
-#' @paramdo.sieve = TRUE
+#' @param do.sieve = TRUE
 #' @param sieve.mode mode of cell-neighborhood,  Neumann [0]: the four horizontally and vertically neighboured cells; Moore [1]: all eight adjacent cells. Default: "0"
 #' @param sieve.thresh minimum number of cells in a group of adjacent cells (minimum 2). Default: 4
 #' @param do.shrink.expand regions with valid data in the input grid can be shrinked or expanded by a certain amount (radius). Default: TRUE
@@ -39,7 +39,7 @@
 #' @export
 #'
 hiPassThresh <- function(x, scale.factor, threshold, path.output = NULL, do.sieve = TRUE, sieve.mode = "0", sieve.thresh = 4, do.shrink.expand = TRUE, expand = 4,
-                                 do.buf = FALSE, buf.size = 1, do.use.temp.HPF = FALSE, do.use.temp.Thresh = FALSE, path.save = tempdir(), NoData = -99999, env.rsaga = NULL, show.output.on.console = FALSE, quiet = TRUE)
+                                 do.buf = FALSE, buf.size = 1, do.use.temp.HPF = FALSE, do.use.temp.Thresh = FALSE, path.save = tempdir(), NoData = -99999, env.rsaga = NULL, show.output.on.console = FALSE, quiet = TRUE, ...)
 {
 
   # get start time of process

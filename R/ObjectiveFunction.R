@@ -11,6 +11,10 @@
 #' @param env ...
 #' @param Grass.Segmentation.Minsize = NA,
 #' @param Grass.Segmentation.Threshold = NA
+#' @param HiPassFilter.scale.factor
+#' @param HiPassFilter.scale.threshold
+#' @param HiPassFilter.input.filter path to load
+#' @param HiPassFilter.input.segmentation path to load
 #' @param Scale.Input.Grid input grid for computing segmentation scale parameters
 #' @param Scale.Input.Grid.Cell.Size cell size of input grid. Default: prod(raster::res(raster::raster(slp.tif.path)))
 #' @param Scale.Statistic.Min.Size min size of area/polygon which is included in statistics (usefull for SAGA GIS segmentations). Default: "0"
@@ -45,9 +49,10 @@
 #'
 #'
 #' @export
-Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Size = prod(raster::res(raster::raster(slp.tif.path))), Scale.Statistic.Min.Size = "0", Objective.Function.save = FALSE, Objective.Function.save.path = NULL, Count = "1", Min = "0", Max = "0", Range = "0", Sum = "0", Mean = "1", Var = "1", Stddev = "0", Objective.Function.save.name = "",
+Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Size = prod(raster::res(raster::raster(Scale.Input.Grid))), Scale.Statistic.Min.Size = "0", Objective.Function.save = FALSE, Objective.Function.save.path = NULL, Count = "1", Min = "0", Max = "0", Range = "0", Sum = "0", Mean = "1", Var = "1", Stddev = "0", Objective.Function.save.name = "",
                                Objective.Function.Mean.Segmentation.Grid = paste0(tmp.path, "Objective.Function.Mean.Segmentation.Grid.sgrd"), Objective.Function.Count.Grid = paste0(tmp.path, "Objective.Function.Count.Grid.sgrd"), Objective.Function.MoransI = paste0(tmp.path, "Objective.Function.MoransI.txt"),
-                               Quantile = 0, Scales, Grass.Objective.Function.Method = "Threshold", Segments.Poly, Grass.Segmentation.Minsize = NA, Grass.Segmentation.Threshold = NA, Seed.Method = "", env = RSAGA::rsaga.env(), show.output.on.console = FALSE, quiet = TRUE, ...)
+                               Quantile = 0, Scales, Grass.Objective.Function.Method = "Threshold", Segments.Poly, Grass.Segmentation.Minsize = NA, Grass.Segmentation.Threshold = NA, Seed.Method = "", env = RSAGA::rsaga.env(), show.output.on.console = FALSE, quiet = TRUE,
+                               HiPassFilter.input.segmentation = NULL, HiPassFilter.input.filter = Scale.Input.Grid, HiPassFilter.scale.factor = NULL, HiPassFilter.threshold = NULL, ...)
 {
 
   # browser()
@@ -76,10 +81,42 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
                                          "Morans I" = double(), "Normalized Morans I" = double(), "Objective Function" = double())
   }
 
-  if(Tool == "High Pass Segmentation")
+
+  if(Grass.Objective.Function.Method == "High Pass Segmentation")
   {
     df.Objective.Function  <- data.frame("Threshold" = double(), "Minsize" = double(), "Intrasegment Variance" = double(), "Normalized Intrasegment Variance" = double(),
                                          "Morans I" = double(), "Normalized Morans I" = double(), "Objective Function" = double())
+
+    # ... check input
+    # .... input for segmentation
+    if(class(HiPassFilter.input.segmentation) == "RasterLayer")
+    {
+      r.HiPassFilter.input.segmentation <- HiPassFilter.input.segmentation
+    } else {
+        if(tools::file_ext(HiPassFilter.input.segmentation) == "sgrd")
+        {
+          r.HiPassFilter.input.segmentation <- raster::raster(paste0(tools::file_path_sans_ext(HiPassFilter.input.segmentation), ".sdat"))
+        } else {
+          r.HiPassFilter.input.segmentation <- raster::raster(HiPassFilter.input.segmentation)
+        }
+    }
+
+    # ... input for filtering
+    if(class(HiPassFilter.input.filter) == "RasterLayer")
+    {
+      r.HiPassFilter.input.filter <- HiPassFilter.input.filter
+    } else {
+
+        if(tools::file_ext(HiPassFilter.input.filter) == "sgrd")
+        {
+          r.HiPassFilter.input.filter <- raster::raster(paste0(tools::file_path_sans_ext(HiPassFilter.input.filter), ".sdat"))
+        } else {
+          r.HiPassFilter.input.filter <- raster::raster(HiPassFilter.input.filter)
+        }
+    }
+
+    result.filter <- Lslide::hiPassThresh(x = r.HiPassFilter.input.filter, scale.factor = HiPassFilter.scale.factor, threshold = HiPassFilter.threshold, env.rsaga = env,
+                                          show.output.on.console = show.output.on.console, quiet = quiet, ...)
   }
 
 
@@ -97,7 +134,8 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
       multiplier <- 100
     }
 
-    if(Grass.Objective.Function.Method == "Compactness")
+    if(Grass.Objective.Function.Method == "Compactness" || Grass.Objective.Function.Method == "High Pass Segmentation"
+       || Grass.Objective.Function.Method == "Threshold")
     {
       multiplier <- 100
     }
@@ -115,8 +153,8 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
       Lslide::segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env,
                    Fast.Representativeness.LevelOfGeneralisation = i, Seed.Generation.Scale = as.character(i),
                    show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, quiet = quiet, ...)
-    } else if(Tool == "GRASS")
-    {
+    } else if(Tool == "GRASS") {
+
       if(Grass.Objective.Function.Method == "Threshold")
       {
         # browser()
@@ -141,8 +179,16 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
 
       }
 
-    } else if(Tool == "GRASS Superpixels SLIC")
-    {
+      if(Grass.Objective.Function.Method == "High Pass Segmentation")
+      {
+        Lslide::hiPassSegmentation(Segments.Poly = segments.poly, env.rsaga = env,
+                                   input.segmentation = r.HiPassFilter.input.segmentation, result.filter = result.filter, load.output = FALSE,
+                                   show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, quiet = quiet,
+                                   Grass.Segmentation.Minsize = Grass.Segmentation.Minsize, Grass.Segmentation.Threshold = i, ...)
+
+      }
+
+    } else if(Tool == "GRASS Superpixels SLIC") {
       if(Grass.Objective.Function.Method == "Compactness")
       {
         Lslide::segmentation(Tool = Tool, Segments.Poly = segments.poly, Seed.Method = Seed.Method, env = env, quiet = quiet,
@@ -155,9 +201,6 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
                      Grass.SLIC.Superpixels = i, show.output.on.console = show.output.on.console, estimateScaleParameter = TRUE, ...)
       }
 
-    } else if(Tool == "High Pass Segmentation")
-    {
-      Lslide::highPassSegmentation(...)
     }
 
     # Grid Statistics -----------------------------------------------------------------------
@@ -189,7 +232,18 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
 
     if(i == Scales[1])
     {
-      Scale.Input.Grid.r <- raster::raster(Scale.Input.Grid)
+      if(class(Scale.Input.Grid) == "RasterLayer")
+      {
+        Scale.Input.Grid.r  <- Scale.Input.Grid
+      } else {
+        if(tools::file_ext(Scale.Input.Grid) == "sgrd")
+        {
+          Scale.Input.Grid.r <- raster::raster(paste0(tools::file_path_sans_ext(Scale.Input.Grid), ".sdat"))
+        } else {
+          Scale.Input.Grid.r <- raster::raster(Scale.Input.Grid)
+        }
+      }
+
       rgrass7::writeRAST(x =  as(Scale.Input.Grid.r, "SpatialGridDataFrame"),
                          vname =  "ScaleGrid", zcol = names(Scale.Input.Grid.r), overwrite = TRUE)
     }
@@ -218,9 +272,13 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
     # get start time of process
     process.time.start.extraction <- proc.time()
 
-    segments.scale.statistic.sf <-  sf::st_read(dsn = file.path(getwd(), dirname(segments.scale.statistic)),
-                                                layer = tools::file_path_sans_ext(basename(segments.scale.statistic)),
-                                                stringsAsFactors = FALSE, quiet = quiet) # simple feature object, sf package
+
+    segments.scale.statistic.sf <-  sf::st_read(dsn = segments.scale.statistic, stringsAsFactors = FALSE, quiet = TRUE) # simple feature object, sf package
+
+
+    # segments.scale.statistic.sf <-  sf::st_read(dsn = file.path(getwd(), dirname(segments.scale.statistic)),
+    #                                             layer = tools::file_path_sans_ext(basename(segments.scale.statistic)),
+    #                                             stringsAsFactors = FALSE, quiet = TRUE) # simple feature object, sf package
 
 
     # stat <- suppressMessages(read.dbf(paste0(tools::file_path_sans_ext(segments.scale.statistic), ".dbf")))    # last: variance | last - 1: mean | last - 2: cell count
@@ -250,7 +308,7 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
 
     moransI.shape <- as(segments.scale.statistic.sf, "Spatial") # convert simple feature to spatialobjectdataframe
     poly2_nb_speed_up <- rgeos::gUnarySTRtreeQuery(moransI.shape) # speed up function for poly2nb
-    moransI.queen.nb <-spdep::poly2nb(moransI.shape, foundInBox = poly2_nb_speed_up) # create contiguity queen neughbours by Waller & Gotway
+    moransI.queen.nb <- spdep::poly2nb(moransI.shape, foundInBox = poly2_nb_speed_up) # create contiguity queen neughbours by Waller & Gotway
 
     # get out NA's, set them to 0
     if(any(is.na(moransI.shape$s_average)))
@@ -286,6 +344,12 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
       {
         df.Objective.Function[nrow(df.Objective.Function)+1,] <- c(Grass.Segmentation.Threshold, i, stat.intrasegment.variance, NA, moransI$estimate[[1]], NA, NA)
       }
+
+      if(Grass.Objective.Function.Method == "High Pass Segmentation")
+      {
+        df.Objective.Function[nrow(df.Objective.Function)+1,] <- c(i, Grass.Segmentation.Minsize, stat.intrasegment.variance, NA, moransI$estimate[[1]], NA, NA)
+      }
+
 
     } # end GRASS
 
