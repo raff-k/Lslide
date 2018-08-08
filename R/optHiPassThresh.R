@@ -168,7 +168,7 @@ optHiPassThresh <- function(x, inventory, range.scale.factor, range.threshold, p
   ## init high-pass function
   intern.hiPassFun <- function(path.x, path.save, env.rsaga, scale.factor, show.output.on.console = FALSE)
   {
-    scale.txt <- gsub(pattern = "\\.", replacement = "", x = as.character(scale.factor))
+    scale.txt <- gsub(pattern = "\\.", replacement = "_", x = as.character(scale.factor))
     path.hipass <- file.path(path.save, paste0("hipass_", scale.txt, ".sgrd"))
 
     # RSAGA::rsaga.get.usage(lib = "grid_filter", module = 11, env = env.rsaga)

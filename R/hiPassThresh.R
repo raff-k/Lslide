@@ -76,7 +76,7 @@ hiPassThresh <- function(x, scale.factor, threshold, path.output = NULL, do.siev
   ## ... performing high-pass filter -------------------
   if(quiet == FALSE) cat("... high-pass filter with scale: ", scale.factor, "\n")
 
-  scale.txt <- gsub(pattern = "\\.", replacement = "", x = as.character(scale.factor))
+  scale.txt <- gsub(pattern = "\\.", replacement = "_", x = as.character(scale.factor))
   path.hipass <- file.path(path.save, paste0("hipass_", scale.txt, ".sgrd"))
 
   if(do.use.temp.HPF && file.exists(path.hipass))
@@ -93,7 +93,7 @@ hiPassThresh <- function(x, scale.factor, threshold, path.output = NULL, do.siev
   ## ... check raster for continuation ----------------------
   # thresh.txt <- gsub(pattern = "\\.", replacement = "", x = as.character(threshold))
   thresh.txt <- gsub(pattern = "\\.", replacement = "_", x = as.character(threshold))
-  path.hipassThresh <- file.path(path.save, paste0("hipass_", scale.txt, "_", thresh.txt.save, ".sgrd"))
+  path.hipassThresh <- file.path(path.save, paste0("hipass_", scale.txt, "___", thresh.txt, ".sgrd"))
 
   r.check <- raster::raster(paste0(tools::file_path_sans_ext(path.hipass), ".sdat"))
   r.check.max <- suppressWarnings(max(raster::values(r.check), na.rm = TRUE))
