@@ -81,7 +81,7 @@ hiPassSegmentation <- function(input.filter, input.segmentation = input.filter, 
   # browser()
   # start segmentation
   # print(parseGRASS("i.segment"))
-  rgrass7::execGRASS("i.segment", group = "GRASS.Segmentation.Group", flags = c("overwrite"), output = "output.segmentation.GRASS", threshold = Grass.Segmentation.Threshold,
+  rgrass7::execGRASS("i.segment", group = "GRASS.Segmentation.Group", flags = c("overwrite"), output = "output_seg", threshold = Grass.Segmentation.Threshold,
                      memory = Grass.Segmentation.Memory, minsize = Grass.Segmentation.Minsize, Sys_show.output.on.console = show.output.on.console)
 
 
@@ -95,7 +95,7 @@ hiPassSegmentation <- function(input.filter, input.segmentation = input.filter, 
 
 
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = "output.segmentation.GRASS", type = "Int32", output =  Segments.Grid.tmp, format = "GTiff",
+      input = "output_seg", type = "Int32", output =  Segments.Grid.tmp, format = "GTiff",
       nodata =  writeRaster.NAflag))
 
 
@@ -109,7 +109,7 @@ hiPassSegmentation <- function(input.filter, input.segmentation = input.filter, 
   } else {
 
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = "output.segmentation.GRASS", type = "Int32", output =  paste0(tools::file_path_sans_ext(Segments.Grid), ".tif"), format = "GTiff",
+      input = "output_seg", type = "Int32", output =  paste0(tools::file_path_sans_ext(Segments.Grid), ".tif"), format = "GTiff",
       nodata =  writeRaster.NAflag))
     }
 
@@ -122,7 +122,7 @@ hiPassSegmentation <- function(input.filter, input.segmentation = input.filter, 
   #   GRID = paste0(tools::file_path_sans_ext(Segments.Grid), ".tif"), POLYGONS =  Segments.Poly))
   # print(parseGRASS("r.to.vect"))
   rgrass7::execGRASS("r.to.vect", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-    input = "output.segmentation.GRASS", output = "Segments_Poly", type = "area"))
+    input = "output_seg", output = "Segments_Poly", type = "area"))
 
 
   # print(parseGRASS("v.out.ogr"))
