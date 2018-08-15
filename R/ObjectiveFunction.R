@@ -127,22 +127,26 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
   for(i in Scales)
   {
 
-    multiplier <- 1
+    # multiplier <- 1
+    i.txt <- as.character(i)
 
     if(Seed.Method == "Fast Representativeness")
     {
-      multiplier <- 100
+      # multiplier <- 100
+      i.txt <- gsub(pattern = "\\.", replacement = "_", x = i.txt)
     }
 
     if(Grass.Objective.Function.Method == "Compactness" || Grass.Objective.Function.Method == "High Pass Segmentation"
        || Grass.Objective.Function.Method == "Threshold")
     {
-      multiplier <- 100
+      # multiplier <- 100
+      i.txt <- gsub(pattern = "\\.", replacement = "_", x = i.txt)
     }
 
 
     print(paste0("Level of Generalisation|Threshold|Minsize|... : ", i))
-    segments.poly <- paste0(tools::file_path_sans_ext(Segments.Poly) , (i*multiplier),".", tools::file_ext(Segments.Poly))
+    # segments.poly <- paste0(tools::file_path_sans_ext(Segments.Poly) , (i*multiplier),".", tools::file_ext(Segments.Poly))
+    segments.poly <- paste0(tools::file_path_sans_ext(Segments.Poly) , i.txt, ".", tools::file_ext(Segments.Poly))
     # segments.scale.statistic <- paste0(tools::file_path_sans_ext(segments.poly) , "_scaleStat.", tools::file_ext(segments.poly))
     segments.scale.statistic <- segments.poly # update after changed dbf header
 
