@@ -13,6 +13,9 @@
 #' @param col.nIV line color for normalized intrasegment variance. Default: "#6495ED"
 #' @param col.nMI line color for normalized Moran's I. Default: "#8B4513"
 #' @param col.sSl point color for selected scale parameter. Default: "gold"
+#' @param selected.Scale.size scale size of selected point. Default: 1.5
+#' @param selected.Scale.shape shape of selected point. Default: 1
+#' @param selected.Scale.stroke width of outline of selected point. Default: 1.2
 #' @param ... ggplot-theme options
 #'
 #' @return
@@ -26,7 +29,7 @@
 #' @export
 plotObjectiveFunction <- function(x, legend.position = "bottom", title = "", selected.Scale = NULL, selected.Scale.label = "selected scale",
                                   col.OF = "#DC143C", col.PF = "black", col.nIV = "#6495ED", col.nMI = "#8B4513", col.sSl = "gold",
-                                  selected.Scale.size = 2, selected.Scale.shape = 3, stroke = 2, ...)
+                                  selected.Scale.size = 1.5, selected.Scale.shape = 1, selected.Scale.stroke = 1.2, ...)
 {
   # get values
   minVal <- min(x$Objective.Function)
@@ -62,8 +65,8 @@ plotObjectiveFunction <- function(x, legend.position = "bottom", title = "", sel
   if(!is.null(selected.Scale))
   {
     plotOF <- plotOF + geom_point(data =  x.melt[intersect(grep("Obj", x.melt$variable),   which(x.melt$Scale.Parameter %in% selected.Scale)),],
-                        aes(x = Scale.Parameter, y = value), color = col.sSl, size = selected.Scale.size, shape = selected.Scale.shape, stroke = selected.Scale.stroke) +
-                        scale_shape_manual(name = "", labels = selected.Scale.label)
+                        aes(x = Scale.Parameter, y = value, shape = "shape scale"), color = col.sSl, size = selected.Scale.size, stroke = selected.Scale.stroke) +
+                        scale_shape_manual(name = "", labels = selected.Scale.label, values = c("shape scale" = selected.Scale.shape))
   }
 
 
