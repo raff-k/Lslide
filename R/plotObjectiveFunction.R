@@ -25,7 +25,8 @@
 #'
 #' @export
 plotObjectiveFunction <- function(x, legend.position = "bottom", title = "", selected.Scale = NULL, selected.Scale.label = "selected scale",
-                                  col.OF = "#DC143C", col.PF = "black", col.nIV = "#6495ED", col.nMI = "#8B4513", col.sSl = "gold", ...)
+                                  col.OF = "#DC143C", col.PF = "black", col.nIV = "#6495ED", col.nMI = "#8B4513", col.sSl = "gold",
+                                  selected.Scale.size = 2, selected.Scale.shape = 3, stroke = 2, ...)
 {
   # get values
   minVal <- min(x$Objective.Function)
@@ -61,8 +62,8 @@ plotObjectiveFunction <- function(x, legend.position = "bottom", title = "", sel
   if(!is.null(selected.Scale))
   {
     plotOF <- plotOF + geom_point(data =  x.melt[intersect(grep("Obj", x.melt$variable),   which(x.melt$Scale.Parameter %in% selected.Scale)),],
-                        aes(x = Scale.Parameter, y = value, shape = "selected scale"), color = col.sSl, size = 8) +
-                        scale_shape_manual(values = c("selected scale" = "circle"), name = "", labels = selected.Scale.label)
+                        aes(x = Scale.Parameter, y = value), color = col.sSl, size = selected.Scale.size, shape = selected.Scale.shape, stroke = selected.Scale.stroke) +
+                        scale_shape_manual(name = "", labels = selected.Scale.label)
   }
 
 
