@@ -67,6 +67,10 @@
 #' @param Mode.Filter.Size moving window size of mode-filter. Default: 3
 #' @param Mode.Filter.Segment.MinSize objects smaller and equal to this size are selected for filtering. Default: 3
 #' @param par.i run number. Default: ""
+#' @param Sieving.Flac perform sieving. Default: FALSE
+#' @param Sieving.Mode sieving mode. Default:"0"
+#' @param Sieving.Thresh minsize of clumps. Default: 4
+#' @param Sieving.Expand expand cells using majority filter. radius in cell sizes. Default:4
 #'
 #' @keywords segmentation, region growing, superpixels Simple Linear Iterative Clustering
 #'
@@ -79,7 +83,8 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
                          Segmentation.Boundary.Grid = NULL,  Grass.Segmentation.Goodness = paste0("Grass.Segmentation.Goodness", par.i), AllVertices = "FALSE", NoData = FALSE, Mask = NULL, NoData.Flag = -99999, show.output.on.console = FALSE, Seed.Method = "", Seed.Generation.Variance =  paste0(tempdir(), paste0("SeedGenerationVariance", par.i, ".sgrd")), Seed.Generation.Points =  file.path(tempdir(), paste0("SeedGenerationPoints", par.i, ".shp")),
                          Seed.Generation.Type = "0", Seed.Generation.Scale = "10.0", Generalisation.Flac = FALSE, Generalization.Mode = "1", Generalization.Radius = "1", Generalization.Threshold = "0.0", env = RSAGA::rsaga.env(),
                          Grass.SLIC.Iter = 10, Grass.SLIC.Superpixels = 200, Grass.SLIC.Step = 0, Grass.SLIC.Compactness = 1.0, Grass.SLIC.Superpixels.MinSize = 1, Grass.SLIC.Memory = 300, Grass.SLIC.Perturb = 0, burn.Boundary.into.Segments = FALSE,
-                         estimateScaleParameter = FALSE, Mode.Filter.Flac = FALSE, Mode.Filter.Size = 7, Mode.Filter.Segment.MinSize = 3, par.i = "", ...)
+                         estimateScaleParameter = FALSE, Mode.Filter.Flac = FALSE, Mode.Filter.Size = 7, Mode.Filter.Segment.MinSize = 3, par.i = "",
+                         Sieving.Flac = FALSE, Sieving.Mode = "0", Sieving.Thresh = 4, Sieving.Expand = 4, ...)
 {
 
  # browser()
@@ -839,6 +844,53 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     }
 
   }
+
+
+
+
+
+
+  #  Sieving ------------------------------------------------------------------------
+  # perfrom sieving
+  if(Sieving.Flac == TRUE)
+  {
+
+    # browser()
+
+    if(tools::file_ext(Segments.Grid) != "sgrd")
+    {
+      Segments.Grid.r <- raster::raster(Segments.Grid)
+      rgdal::writeGDAL(dataset = as(Segments.Grid.r, "SpatialGridDataFrame"),
+                       fname = file.path(tempdir(), paste0(basename(tools::file_path_sans_ext(Segments.Grid)), ".sdat")),
+                       drivername = "SAGA")
+
+
+      Segments.Grid.tmp.path <- file.path(tempdir(), paste0(basename(tools::file_path_sans_ext(Segments.Grid)), ".sgrd"))
+
+    } else {
+      Segments.Grid.tmp.path <- Segments.Grid
+    }
+
+    print("perform sieving")
+
+    # RSAGA::rsaga.get.usage(lib = "grid_filter", module = 15, env = env)
+    # MODE: [0] Neumann, [1] Moore
+    RSAGA::rsaga.geoprocessor(lib = "grid_filter", module = 15, env = env, show.output.on.console = show.output.on.console, param = list(
+      INPUT = Segments.Grid.tmp.path, OUTPUT = Segments.Grid.tmp.path, MODE = Sieving.Mode, THRESHOLD = Sieving.Thresh, ALL = "1"))
+
+
+    # RSAGA::rsaga.get.usage(lib = "grid_tools", module = 28, env = env.rsaga)
+    # OPERATION: [3] expand and shrink
+    # CIRCLE: [1] Circle
+    # EXPAND: [3] majority
+    RSAGA::rsaga.geoprocessor(lib = "grid_tools", module = 28, env = env, show.output.on.console = show.output.on.console, param = list(
+        INPUT = Segments.Grid.tmp.path, RESULT = Segments.Grid.tmp.path, OPERATION = "3", CIRCLE = "1", RADIUS = Sieving.Expand, EXPAND = "3"))
+
+
+  Segments.Grid.tmp <- raster::raster(paste0(tools::file_path_sans_ext(Segments.Grid.tmp.path), ".sdat"))
+
+} # end of shrink and expand
+
 
 
 
