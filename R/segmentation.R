@@ -901,7 +901,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
     if(tools::file_ext(Segments.Grid) != "sgrd")
     {
-      Segments.Grid.tmp <- file.path(tempdir(), paste0(basename(tools::file_path_sans_ext(Segments.Grid)), ".sgrd"))
+      Segments.Grid.tmp <- file.path(tempdir(), paste0(basename(tools::file_path_sans_ext(Segments.Grid)), ".sdat"))
 
       # r.Segments.Grid <- raster::raster(Segments.Grid)
       rgdal::writeGDAL(dataset = as(r.Segments.Grid, "SpatialGridDataFrame"),
