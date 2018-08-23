@@ -62,9 +62,11 @@ Objective.Function <- function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Siz
 
   if(is.null(Scale.Input.Grid.Cell.Size))
   {
-    if(tools::file_ext(Scale.Input.Grid) == "sgrd")
+    if(class(Scale.Input.Grid) !=  "RasterLayer" && tools::file_ext(Scale.Input.Grid) == "sgrd")
     {
       Scale.Input.Grid.Cell.Size <- prod(raster::res(raster::raster(paste0(tools::file_path_sans_ext(Scale.Input.Grid), ".sdat"))))
+    } else if(class(Scale.Input.Grid) ==  "RasterLayer"){
+      Scale.Input.Grid.Cell.Size <- prod(raster::res(Scale.Input.Grid))
     } else {
       Scale.Input.Grid.Cell.Size <- prod(raster::res(raster::raster(Scale.Input.Grid)))
     }
