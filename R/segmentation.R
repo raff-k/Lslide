@@ -645,9 +645,9 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
   # # # # # check file extentsion of segmentation grid
   if(tools::file_ext(Segments.Grid) == "sgrd")
   {
-    Segments.Grid.tmp <- raster::raster(paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"))
+    r.Segments.Grid <- raster::raster(paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"))
   } else {
-    Segments.Grid.tmp <- raster::raster(Segments.Grid)
+    r.Segments.Grid <- raster::raster(Segments.Grid)
   }
 
     # browser()
@@ -664,7 +664,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
    if(tools::file_ext(Segmentation.Boundary.Grid) == "sgrd")
     {
-     Segmentation.Boundary.Grid.tmp  <- raster::raster(paste0(tools::file_path_sans_ext(Segmentation.Boundary.Grid), ".sdat"))
+     r.Segmentation.Boundary.Grid  <- raster::raster(paste0(tools::file_path_sans_ext(Segmentation.Boundary.Grid), ".sdat"))
     # Segmentation.Boundary.Grid.tmp <- Segmentation.Boundary.Grid
     } else {
 
@@ -673,14 +673,14 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 #       RSAGA::rsaga.geoprocessor(lib = "io_gdal", module = 1, env = env, show.output.on.console = show.output.on.console, param = list(
 #         GRIDS = Segmentation.Boundary.Grid, FILE =  paste0(tools::file_path_sans_ext(Segmentation.Boundary.Grid.tmp), ".sdat"), FORMAT =  "42"))
 
-      Segmentation.Boundary.Grid.tmp <- raster::raster(Segmentation.Boundary.Grid)
+      r.Segmentation.Boundary.Grid <- raster::raster(Segmentation.Boundary.Grid)
       }
 
     # Segments.Grid.rgdal <- paste0(tools::file_path_sans_ext(Segments.Grid.tmp), ".sdat")
     # Segments.Grid.rgdal.grid <- rgdal::readGDAL(fname = Segments.Grid.rgdal, silent = TRUE)
 
-
-    val <- Segments.Grid.tmp@data@max
+    val <- max(raster::values(r.Segments.Grid), na.rm = TRUE)
+    # val <- r.Segments.Grid@data@max
     # val <- max(Segments.Grid.rgdal.grid$band1, na.rm = TRUE)
 
     # formula for calculation
@@ -695,12 +695,26 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     #   GRIDS =  paste(c(Segmentation.Boundary.Grid.tmp, Segments.Grid.tmp), collapse = ";"), RESULT = Segments.Grid.tmp, FORMULA = formula.expression,
     #   FNAME = "1", USE_NODATA = "1", TYPE = "5"))
 
-    Segments.Grid.tmp <- raster::overlay(x = Segmentation.Boundary.Grid.tmp, y = Segments.Grid.tmp, fun = function(x, y){ifelse(x > 0, (x + val), y)}, forcefun = TRUE)
+    r.Segments.Grid <- raster::overlay(x = r.Segmentation.Boundary.Grid, y = r.Segments.Grid, fun = function(x, y){ifelse(x > 0, (x + val), y)}, forcefun = TRUE)
 
-    rm(val, Segmentation.Boundary.Grid.tmp)
+    rm(val, r.Segmentation.Boundary.Grid)
     # rm(formula.expression, val, Segments.Grid.rgdal.grid, Segments.Grid.rgdal)
 
+
+    if(tools::file_ext(Segments.Grid) != "sgrd")
+    {
+      raster::writeRaster(x = r.Segments.Grid, filename = Segments.Grid, overwrite = TRUE, NAflag = NoData.Flag)
+
+    } else {
+
+      rgdal::writeGDAL(dataset = as(r.Segments.Grid, "SpatialGridDataFrame"),
+                       fname = file.path(paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat")),
+                       drivername = "SAGA", mvFlag = NoData.Flag)
+    }
+
   }
+
+
 
   #  Generalization ------------------------------------------------------------------------
   # perfrom generalization (majority filter)
@@ -709,18 +723,18 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
     # browser()
 
-    if(file_ext(Segments.Grid) != "sgrd")
+    if(tools::file_ext(Segments.Grid) != "sgrd")
     {
-      Segments.Grid.r <- raster::raster(Segments.Grid)
-      rgdal::writeGDAL(dataset = as(Segments.Grid.r, "SpatialGridDataFrame"),
+      # r.Segments.Grid <- raster::raster(Segments.Grid)
+      rgdal::writeGDAL(dataset = as(r.Segments.Grid, "SpatialGridDataFrame"),
                        fname = file.path(tempdir(), paste0(basename(tools::file_path_sans_ext(Segments.Grid)), ".sdat")),
                        drivername = "SAGA")
 
 
-      Segments.Grid.tmp.path <- file.path(tempdir(), paste0(basename(tools::file_path_sans_ext(Segments.Grid)), ".sgrd"))
+      Segments.Grid.tmp <- file.path(tempdir(), paste0(basename(tools::file_path_sans_ext(Segments.Grid)), ".sgrd"))
 
     } else {
-      Segments.Grid.tmp.path <- Segments.Grid
+      Segments.Grid.tmp <- Segments.Grid
     }
 
     # Segments.Grid.tmp.path <- paste0(tempdir(), "/", "Segments_Grid.tif")
@@ -745,7 +759,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     if(length(Generalization.Radius) == 1) # 1 time use of majority filter
     {
       RSAGA::rsaga.geoprocessor(lib="grid_filter", module = 6, env = env, show.output.on.console = show.output.on.console, param = list(
-        INPUT = Segments.Grid.tmp.path, RESULT = Segments.Grid.tmp.path, MODE = Generalization.Mode, RADIUS = Generalization.Radius,
+        INPUT = Segments.Grid.tmp, RESULT = Segments.Grid.tmp, MODE = Generalization.Mode, RADIUS = Generalization.Radius,
         THRESHOLD = Generalization.Threshold))
     } else # use of majority filter
     {
@@ -753,13 +767,29 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
       for(f in Generalization.Radius) # x time use of majority filter - first element is first filter procedure
       {
         RSAGA::rsaga.geoprocessor(lib="grid_filter", module = 6, env = env, show.output.on.console = show.output.on.console, param = list(
-          INPUT = Segments.Grid.tmp.path, RESULT = Segments.Grid.tmp.path, MODE = Generalization.Mode, RADIUS = f,
+          INPUT = Segments.Grid.tmp, RESULT = Segments.Grid.tmp, MODE = Generalization.Mode, RADIUS = f,
           THRESHOLD = Generalization.Threshold))
       }
 
     }
 
-    Segments.Grid.tmp <- raster::raster(paste0(tools::file_path_sans_ext(Segments.Grid.tmp.path), ".sdat"))
+
+    if(tools::file_ext(Segments.Grid) != "sgrd")
+    {
+      # RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env)
+      # [4] GeoTIFF ... higher release: 2.3.1 format = "7"
+      RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env, show = FALSE)
+      formatTIFF <- gsub("\\D", "", grep('GeoTIFF', RSAGAUsage, value = TRUE))
+
+      RSAGA::rsaga.geoprocessor(lib="io_gdal", module = 1, env = env, show.output.on.console = show.output.on.console, param = list(
+        GRIDS = Segments.Grid.tmp, FILE = Segments.Grid, FORMAT = formatTIFF))
+
+    } else {
+      Segments.Grid <- Segments.Grid.tmp
+    }
+
+
+    r.Segments.Grid <- raster::raster(paste0(tools::file_path_sans_ext(Segments.Grid.tmp), ".sdat"))
 
   }
 
@@ -772,10 +802,10 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     # browser()
 
     print("perform Mode Filter")
-    Segments.Grid.tmp.path <- file.path(tempdir(), paste0("SegGridTmp", par.i, ".tif"))
-    raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid.tmp.path, overwrite = TRUE, NAflag = NoData.Flag)
+    Segments.Grid.tmp <- file.path(tempdir(), paste0("SegGridTmp", par.i, ".tif"))
+    raster::writeRaster(x = r.Segments.Grid, filename = Segments.Grid.tmp, overwrite = TRUE, NAflag = NoData.Flag)
 
-    Segments.Grid.Mode.tmp.path  <- file.path(tempdir(), paste0("SegGridMode", par.i, ".tif"))
+    Segments.Grid.Mode.tmp  <- file.path(tempdir(), paste0("SegGridMode", par.i, ".tif"))
 
     # re-write segmentation raster
     # rgrass7::writeRAST(x = as(Segments.Grid.tmp, "SpatialGridDataFrame"), vname = paste0("Segments.Grid.tmp", par.i), zcol = names(Segments.Grid.tmp), overwrite = TRUE,
@@ -783,45 +813,45 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
     # print(rgrass7::parseGRASS("r.in.gdal"))
     rgrass7::execGRASS("r.in.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = Segments.Grid.tmp.path, output = paste0("Segments.Grid.tmp", par.i)))
+      input = Segments.Grid.tmp, output = paste0("Segments_Grid_tmp", par.i)))
 
 
     # print(parseGRASS("r.to.vect"))
     # par.v
     #  "quiet"
     rgrass7::execGRASS("r.to.vect", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = paste0("Segments.Grid.tmp", par.i), output = paste0("Segments_Poly_Mode", par.i), type = "area"))
+      input = paste0("Segments_Grid_tmp", par.i), output = paste0("Segments_Poly_Mode", par.i), type = "area"))
 
 
     # print(parseGRASS("v.to.rast"))
     # par.v
     #  "quiet"
     rgrass7::execGRASS("v.to.rast", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = paste0("Segments_Poly_Mode", par.i), output = paste0("Segments.Grid.tmp", par.i), type = "area", use = "cat"))
+      input = paste0("Segments_Poly_Mode", par.i), output = paste0("Segments_Grid_tmp", par.i), type = "area", use = "cat"))
 
 
     # compute mode
     # print(parseGRASS("r.neighbors"))
     rgrass7::execGRASS("r.neighbors", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input =  paste0("Segments.Grid.tmp", par.i), output = paste0("Segments.Grid.Mode", par.i), method = "mode", size = Mode.Filter.Size))
+      input =  paste0("Segments_Grid_tmp", par.i), output = paste0("Segments_Grid_Mode", par.i), method = "mode", size = Mode.Filter.Size))
 
 
     # write out data
     # print(parseGRASS("r.out.gdal"))
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input = paste0("Segments.Grid.tmp", par.i), output = Segments.Grid.tmp.path))
+      input = paste0("Segments_Grid_tmp", par.i), output = Segments.Grid.tmp))
 
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      input =  paste0("Segments.Grid.Mode", par.i), output = Segments.Grid.Mode.tmp.path))
+      input =  paste0("Segments_Grid_Mode", par.i), output = Segments.Grid.Mode.tmp))
 
 
     # read data
-    Segments.Grid.tmp <- raster::raster(Segments.Grid.tmp.path)
-    Segments.Grid.tmp.mode <- raster::raster(Segments.Grid.Mode.tmp.path)
+    r.Segments.Grid <- raster::raster(Segments.Grid.tmp)
+    r.Segments.Grid.mode <- raster::raster(Segments.Grid.Mode.tmp)
 
     # browser()
     # calculate frequency table and select based on minsize
-    Segments.Grid.tmp.freq <- as.data.table(raster::freq(x = Segments.Grid.tmp))
+    Segments.Grid.tmp.freq <- as.data.table(raster::freq(x = r.Segments.Grid))
     Segments.Grid.tmp.remove <- Segments.Grid.tmp.freq[count <= Mode.Filter.Segment.MinSize,]$value
 
     # browser()
@@ -830,17 +860,29 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
       # create and evaluate expression based on minsize
       # exp <- parse(text=paste0("x == ", Segments.Grid.tmp.remove, collapse = " | "))
 
-      Segments.Grid.tmp.remove.r  <- raster::match(Segments.Grid.tmp, Segments.Grid.tmp.remove, nomatch = 0)
+      Segments.Grid.tmp.remove.r  <- raster::match(r.Segments.Grid, Segments.Grid.tmp.remove, nomatch = 0)
       # Segments.Grid.tmp.remove.r <- raster::calc(x = Segments.Grid.tmp, fun = function(x){return(ifelse(x > 0, 1, 0))}, forcefun = TRUE)
 
 
       # Segments.Grid.tmp.remove.r <- raster::calc(x = Segments.Grid.tmp, fun = function(x){return(ifelse(eval(exp), 1, 0))}, forcefun = TRUE)
 
-      Segments.Grid.tmp <- raster::overlay(x = Segments.Grid.tmp, y = Segments.Grid.tmp.mode, z = Segments.Grid.tmp.remove.r,
+      r.Segments.Grid <- raster::overlay(x = r.Segments.Grid, y = r.Segments.Grid.mode, z = Segments.Grid.tmp.remove.r,
                                 fun =  function(x, y, z){return(ifelse(z > 0, y, x))})
 
 
-      rm(Segments.Grid.tmp.mode, Segments.Grid.tmp.remove.r, Segments.Grid.tmp.freq)
+      rm(r.Segments.Grid.mode, Segments.Grid.tmp.remove.r, Segments.Grid.tmp.freq)
+    }
+
+
+    if(tools::file_ext(Segments.Grid) != "sgrd")
+    {
+      raster::writeRaster(x = r.Segments.Grid, filename = Segments.Grid, overwrite = TRUE, NAflag = NoData.Flag)
+
+    } else {
+
+      rgdal::writeGDAL(dataset = as(r.Segments.Grid, "SpatialGridDataFrame"),
+                       fname = file.path(paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat")),
+                       drivername = "SAGA", mvFlag = NoData.Flag)
     }
 
   }
@@ -859,16 +901,14 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
 
     if(tools::file_ext(Segments.Grid) != "sgrd")
     {
-      Segments.Grid.r <- raster::raster(Segments.Grid)
-      rgdal::writeGDAL(dataset = as(Segments.Grid.r, "SpatialGridDataFrame"),
-                       fname = file.path(tempdir(), paste0(basename(tools::file_path_sans_ext(Segments.Grid)), ".sdat")),
-                       drivername = "SAGA")
+      Segments.Grid.tmp <- file.path(tempdir(), paste0(basename(tools::file_path_sans_ext(Segments.Grid)), ".sgrd"))
 
-
-      Segments.Grid.tmp.path <- file.path(tempdir(), paste0(basename(tools::file_path_sans_ext(Segments.Grid)), ".sgrd"))
+      # r.Segments.Grid <- raster::raster(Segments.Grid)
+      rgdal::writeGDAL(dataset = as(r.Segments.Grid, "SpatialGridDataFrame"),
+                       fname = Segments.Grid.tmp, mvFlag = NoData.Flag, drivername = "SAGA")
 
     } else {
-      Segments.Grid.tmp.path <- Segments.Grid
+      Segments.Grid.tmp <- Segments.Grid
     }
 
     print("perform sieving")
@@ -876,7 +916,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     # RSAGA::rsaga.get.usage(lib = "grid_filter", module = 15, env = env)
     # MODE: [0] Neumann, [1] Moore
     RSAGA::rsaga.geoprocessor(lib = "grid_filter", module = 15, env = env, show.output.on.console = show.output.on.console, param = list(
-      INPUT = Segments.Grid.tmp.path, OUTPUT = Segments.Grid.tmp.path, MODE = Sieving.Mode, THRESHOLD = Sieving.Thresh, ALL = "1"))
+      INPUT = Segments.Grid.tmp, OUTPUT = Segments.Grid.tmp, MODE = Sieving.Mode, THRESHOLD = Sieving.Thresh, ALL = "1"))
 
 
     # RSAGA::rsaga.get.usage(lib = "grid_tools", module = 28, env = env.rsaga)
@@ -884,10 +924,23 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     # CIRCLE: [1] Circle
     # EXPAND: [3] majority
     RSAGA::rsaga.geoprocessor(lib = "grid_tools", module = 28, env = env, show.output.on.console = show.output.on.console, param = list(
-        INPUT = Segments.Grid.tmp.path, RESULT = Segments.Grid.tmp.path, OPERATION = "3", CIRCLE = "1", RADIUS = Sieving.Expand, EXPAND = "3"))
+        INPUT = Segments.Grid.tmp, RESULT = Segments.Grid.tmp, OPERATION = "3", CIRCLE = "1", RADIUS = Sieving.Expand, EXPAND = "3"))
 
 
-  Segments.Grid.tmp <- raster::raster(paste0(tools::file_path_sans_ext(Segments.Grid.tmp.path), ".sdat"))
+  r.Segments.Grid <- raster::raster(paste0(tools::file_path_sans_ext(Segments.Grid.tmp), ".sdat"))
+
+
+  if(tools::file_ext(Segments.Grid) != "sgrd")
+  {
+    raster::writeRaster(x = r.Segments.Grid, filename = Segments.Grid, overwrite = TRUE, NAflag = NoData.Flag)
+
+  # } else {
+  #
+  #   rgdal::writeGDAL(dataset = as(r.Segments.Grid, "SpatialGridDataFrame"),
+  #                    fname = file.path(paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat")),
+  #                    drivername = "SAGA", mvFlag = NoData.Flag)
+  }
+
 
 } # end of shrink and expand
 
@@ -918,32 +971,43 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
     # print("Masking No Data Area in Segments")
     # RSAGA::rsaga.geoprocessor(lib="grid_tools", module = 24, env = env, show.output.on.console = show.output.on.console, param = list(
     #   GRID = Segments.Grid.tmp, MASK = Mask.tmp, MASKED = Segments.Grid.tmp))
-    Segments.Grid.tmp <- raster::overlay(Segments.Grid.tmp, Mask.tmp, fun = function(x, y){return(ifelse(is.na(y), NA, x))})
+    r.Segments.Grid <- raster::overlay(r.Segments.Grid, Mask.tmp, fun = function(x, y){return(ifelse(is.na(y), NA, x))})
+
+
+    if(tools::file_ext(Segments.Grid) != "sgrd")
+    {
+      raster::writeRaster(x = r.Segments.Grid, filename = Segments.Grid, overwrite = TRUE, NAflag = NoData.Flag)
+
+    } else {
+
+      rgdal::writeGDAL(dataset = as(r.Segments.Grid, "SpatialGridDataFrame"),
+                       fname = file.path(paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat")),
+                       drivername = "SAGA", mvFlag = NoData.Flag)
+    }
+
   }
 
   # browser()
 
   # write out data again
-  if(tools::file_ext(Segments.Grid) == "sgrd")
-  {
-
-    Segments.Grid.tmp.path <- paste0(tempdir(), "/", "Segments_Grid.tif")
-    raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid.tmp.path, overwrite=TRUE, NAflag = NoData.Flag)
-
-    RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env,  show = FALSE)
-    formatSAGA <- gsub("\\D", "", grep('SAGA GIS Binary', RSAGAUsage, value = TRUE))
-
-
-    RSAGA::rsaga.geoprocessor(lib = "io_gdal", module = 1, env = env, show.output.on.console = show.output.on.console, param = list(
-      GRIDS = Segments.Grid.tmp.path, FILE =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), FORMAT =   formatSAGA))
-
-  } else {
-    # browser()
-    if(file.exists(Segments.Grid) && !identical(Segments.Grid.tmp,  raster::raster(Segments.Grid)))
-    {
-         raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid, overwrite = TRUE, NAflag = NoData.Flag)
-    }
-  }
+  # if(tools::file_ext(Segments.Grid) == "sgrd")
+  # {
+  #
+  #   Segments.Grid.tmp <- file.path(tempdir(), "Segments_Grid.tif")
+  #   raster::writeRaster(x = r.Segments.Grid, filename = Segments.Grid.tmp, overwrite=TRUE, NAflag = NoData.Flag)
+  #
+  #   RSAGAUsage <- RSAGA::rsaga.get.usage(lib="io_gdal", module = 1, env = env,  show = FALSE)
+  #   formatSAGA <- gsub("\\D", "", grep('SAGA GIS Binary', RSAGAUsage, value = TRUE))
+  #
+  #   RSAGA::rsaga.geoprocessor(lib = "io_gdal", module = 1, env = env, show.output.on.console = show.output.on.console, param = list(
+  #     GRIDS = Segments.Grid.tmp, FILE =  paste0(tools::file_path_sans_ext(Segments.Grid), ".sdat"), FORMAT = formatSAGA))
+  #
+  # } else {
+  #   #if(file.exists(Segments.Grid) && !identical(Segments.Grid.tmp,  raster::raster(Segments.Grid)))
+  #   #{
+  #        raster::writeRaster(x = r.Segments.Grid, filename = Segments.Grid, overwrite = TRUE, NAflag = NoData.Flag)
+  #   #}
+  # }
 
   #  browser()
 
@@ -959,12 +1023,12 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
   # rgrass7::writeRAST(x = as(Segments.Grid.tmp, "SpatialGridDataFrame"), vname = paste0("Segments.Grid.tmp", par.i), zcol = names(Segments.Grid.tmp), overwrite = TRUE,
   #                    flags = "quiet")
 
-  Segments.Grid.tmp.path <- file.path(tempdir(), paste0("SegGridTmp", par.i, ".tif"))
-  raster::writeRaster(x = Segments.Grid.tmp, filename = Segments.Grid.tmp.path, overwrite = TRUE, NAflag = NoData.Flag)
+  Segments.Grid.tmp <- file.path(tempdir(), paste0("SegGridTmp", par.i, ".tif"))
+  raster::writeRaster(x = r.Segments.Grid, filename = Segments.Grid.tmp, overwrite = TRUE, NAflag = NoData.Flag)
 
   # print(rgrass7::parseGRASS("r.in.gdal"))
   rgrass7::execGRASS("r.in.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-    input = Segments.Grid.tmp.path, output = paste0("Segments.Grid.tmp", par.i)))
+    input = Segments.Grid.tmp, output = paste0("Segments_Grid_tmp", par.i)))
 
 
 
@@ -973,7 +1037,7 @@ segmentation <- function(Tool, Segments.Grid, Segments.Poly, Input.Grid, Saga.Ou
   # par.v
   #  "quiet"
   rgrass7::execGRASS("r.to.vect", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-    input = paste0("Segments.Grid.tmp", par.i), output = paste0("Segments_Poly", par.i), type = "area"))
+    input = paste0("Segments_Grid_tmp", par.i), output = paste0("Segments_Poly", par.i), type = "area"))
 
   if(estimateScaleParameter == FALSE)
   {
