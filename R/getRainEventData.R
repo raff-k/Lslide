@@ -251,6 +251,14 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
   res <- precip.tot
 
 
+  ## ... check if there is precipitation in the data
+  if(precip.tot == 0)
+  {
+    flag.zero <- TRUE
+  } else {
+    flag.zero <- FALSE
+  }
+
   # cumulative rainfall
   if(!is.null(cumu.RainFall))
   {
@@ -278,13 +286,18 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
   res <- c(res, cERM)
 
 
+  # fill infinitve values with NAs
+  if(flag.zero)
+  {
+    res[is.infinite(res)] <- NA
+  }
 
 
 
   # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
   ## Step 6: Rainfall measurements for events with landslides --------------------------------------------------
 
-  if(sub.RainEvent)
+  if(sub.RainEvent & !flag.zero)
   {
 
     if(all.RainEvent)
@@ -358,7 +371,7 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
     # browser()
 
     # if(sub.RainEvent && length(S6.SubEvents) > 1)
-    if(sub.RainEvent)
+    if(sub.RainEvent & !flag.zero)
     {
       if(all.RainEvent)
       {
