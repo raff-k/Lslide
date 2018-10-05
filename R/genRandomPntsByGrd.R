@@ -36,7 +36,7 @@ genRandomPntsByGrd <- function(x, r, field, env.grass, do.PointsOnSurface = TRUE
   # rasterize object
   r.rasterize <- raster::rasterize(x = x, y = r, field = field)
 
-  listRndmPts <- lapply(X = 1:3, FUN = function(i, sf.obj, r.rasterize, field, dist, seed){ # nrow(x)
+  listRndmPts <- lapply(X = 1:nrow(x), FUN = function(i, sf.obj, r.rasterize, field, dist, seed){ # nrow(x)
     # browser()
 
     cat(i, " from ", nrow(sf.obj), "\n")
