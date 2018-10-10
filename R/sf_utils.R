@@ -72,7 +72,7 @@ st_rbind = function(x, geom) x %>% lapply(X = ., FUN = function(x) sf::st_set_ge
 #'
 #' @export
 #'
-st_perimeter = function(x) x %>% st_cast("MULTILINESTRING") %>% sf::st_length(.)
+st_perimeter = function(x) x %>% st_cast("MULTILINESTRING") %>% sf::st_length(.) %>% units::drop_units(.)
 
 
 
