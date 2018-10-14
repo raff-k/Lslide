@@ -17,6 +17,39 @@ st_erase = function(x, y) sf::st_difference(x, sf::st_union(sf::st_combine(y))) 
 
 
 
+#' Return geometry from bounding box
+#'
+#' This function calculate the geometry based on a bounding box.
+#'
+#' @param x object of class sf
+#' @param extent vector containing numeric values, in the following order: xmin, xmax, ymax, ymin
+#' @return
+#' Geometry of class sfc
+#'
+#'
+#' @keywords simple feature, geometry of bounding box
+#'
+#'
+#' @export
+#'
+st_bbox_geom = function(x, extent = NULL)
+{
+  if(!is.null(x) & !is.null(extent))
+  {
+    stop("Input conflict: either x or extent!")
+  }
+
+  if(is.null(extent))
+  {
+    out <- sf::st_bbox(x) %>% sf::st_as_sfc(.)
+  } else {
+    names(extent) <- c("xmin", "xmax", "ymax", "ymin")
+    out <- sf::st_bbox(extent) %>% sf::st_as_sfc(.)
+  }
+  return(out)
+} # end of function st_bbox_geom
+
+
 #' Plot sf geometry
 #'
 #' This function simply plots the geometry of a sf object.
@@ -385,4 +418,176 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
   } else {
     return(df.result)
   }
-}
+} # end of function st_mesh
+
+
+
+
+
+
+#' Calculate urban sprawl
+#'
+#' This function calculates the urban sprawl of urban area.
+#'
+#' @param geom.urban polygon of class sf representing the fragmentation geometry
+#' @param geom.boundary polygon of class sf representing subregions, e.g. administrative boundaries
+#' @param dist vector containing distance between lines in x and y direction. Default: c(100, 100) [m]
+#' @param extent Numeric value representing extent for area. Format of vector: c(xmin, xmax, ymax, ymin) . Default: NULL
+#' @param force.extent If TRUE extent is used instead of geom.boundary (if both are present). Default: FALSE
+#' @param do.preProcessing If TRUE (default), the input of geom.frag is, first, dissolved to single part feature, and second, splitted to multi-parts. By this step it is assured, that polygon connected to each other are summarized
+#' @param return.geom If set to TRUE, intermediate geometries are returned as well. Default: FALSE
+#' @param quiet If set to FALSE, actual state is printed to console. Default: TRUE.
+#' @return
+#' ....
+#'
+#'
+#' @keywords simple feature, urban sprawl
+#'
+#'
+#' @export
+#'
+st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100), extent = NULL, force.extent = FALSE, do.preProcessing = TRUE, return.geom = FALSE, quiet = TRUE)
+{
+  # get start time of process
+  process.time.start <- proc.time()
+
+  ## check input
+  if(missing(geom.urban)){ stop('Input of "geom.urban" is missing!')}
+  if(!missing(geom.urban) && !("sf" %in% class(geom.urban))){ stop('Input of "geom.urban" is not of class "sf"!')}
+  if(!is.null(geom.boundary) && !("sf" %in% class(geom.boundary))){ stop('Input of "geom.boundary" is not of class "sf"!')}
+  if(is.null(geom.boundary) && is.null(extent)){
+    warning('If input of "geom.boundary" and "extent" is null. Fish net is created using the extent of "geom.urban"!')
+  }
+  if(is.null(geom.boundary) & is.null(extent) & force.extent){
+    stop('If "force.extent" is TRUE, than extent should be set!"!')
+  }
+  if(!is.null(geom.boundary) & !is.null(extent)){
+    warning('Fish net is created using extent of "geom.boundary". "Extent" is skipped. For "extent" use "force.extent"!')
+  }
+
+  ## check validity of geometries
+  if(!all(sf::st_is_valid(geom.urban))){ stop('Input of "geom.urban" contains not valid geometries. Please try lwgeom::st_make_valid().')}
+  if(!is.null(geom.boundary) && !all(sf::st_is_valid(geom.boundary))){ stop('Input of "geom.boundary" contains not valid geometries. Please try lwgeom::st_make_valid().')}
+
+  ## add unique ID and subset data
+  if(!is.null(geom.boundary)){ geom.boundary$ID_BOUNDS <- 1:nrow(geom.boundary) } # ## add unique IDs
+  if(!is.null(geom.boundary)){geom.boundary <- geom.boundary[, c("ID_BOUNDS", "geometry")]}
+
+
+  ## ... create boundary for fishnet
+  if(!is.null(geom.boundary) & !force.extent){bbox.fishnet <- Lslide::st_bbox_geom(x = geom.boundary)
+  } else if(!is.null(geom.boundary) & force.extent){bbox.fishnet <- Lslide::st_bbox_geom(extent = extent)
+  } else if(is.null(geom.boundary) & !is.null(extent)){bbox.fishnet <- Lslide::st_bbox_geom(extent = extent)
+  } else {bbox.fishnet <- Lslide::st_bbox_geom(x = geom.urban) }
+
+
+  ## create and subset fish net
+  if(!quiet) cat("... create fishnet \n")
+  fishnet <- st_make_grid_lines(x = bbox.fishnet, cellsize = dist)
+
+  if(!is.null(geom.boundary) & !force.extent){
+    if(!quiet) cat("... subset fishnet to area of interest \n")
+    fishnet <- suppressWarnings(sf::st_intersection(x = fishnet, y = geom.boundary))
+  }
+
+
+  ## erase urba area from fishnet
+  if(!quiet) cat("... erase urban area from fishnet \n")
+  erase <- suppressWarnings(Lslide::st_erase(x = fishnet, y = geom.urban))
+
+  # # # # HERE TO GO ON!!!!
+
+  inter.single <- sf::st_cast(x = inter, to = 'LINESTRING')
+
+  sf::st_write(obj = inter.single, dsn = "D:/Users/rAVer/Desktop/Temp/FishNet_InterSingle.shp", delete_layer = T)
+
+  process.time.run <- proc.time() - process.time.start
+  if(quiet == FALSE) cat("------ Run of urban_sprawl: " , round(process.time.run["elapsed"][[1]]/60, digits = 4), " Minutes \n")
+
+  if(return.geom)
+  {
+    if(is.null(geom.boundary))
+    {
+      return(list(mesh = df.result, geom.frag = geom.frag))
+    } else {
+      return(list(mesh = df.result, geom.frag = geom.frag, geom.inter = inter))
+    }
+  } else {
+    return(df.result)
+  }
+
+} # end of function st_urban_sprawl
+
+
+
+
+
+#' Make multiline fishnet
+#'
+#' This function creates a fishnet, consisting of multilines in x and y direction.
+#'
+#' @param x object of class sf
+#' @return
+#' Geometry of class sfc
+#'
+#'
+#' @keywords simple feature, fishnet, multilines
+#'
+#'
+#' @export
+#'
+st_make_grid_lines = function(x, cellsize)
+{
+  # ... create fishnet using corners (lower left corner is starting point)
+  fishnet <- sf::st_make_grid(x = x, cellsize = cellsize, what = "corners")
+
+  # ... get sf::st_make_grid function parameters (automatically calculated in function call)
+  offset <- sf::st_bbox(obj =  x)[1:2]
+  nx <- ceiling((sf::st_bbox(obj = x)[3] - offset[1])/dist[1]) + 1 # add 1 to fit overall columns
+  ny <- ceiling((sf::st_bbox(obj = x)[4] - offset[2])/dist[2]) + 1 # add 1 to fit overall rows
+
+  # ... create lines
+  linesX <- lapply(1:ny, function(i, nx, fishnet){
+    if(i == 1)
+    {
+      index <- 1:nx
+    } else {
+      index <- ((i-1)*nx+1):(i*nx)
+    }
+
+    line <- fishnet[index] %>% st_combine(.) %>%
+      sf::st_multilinestring(x = ., dim = "XY") %>%
+      st_sfc(.) %>%
+      sf::st_sf(ID = paste0("X", i), geometry = .)
+
+    return(line)
+  }, nx = nx, fishnet = fishnet) %>% do.call(what = rbind, args = .)
+
+  seqY <- seq(from = 1, to = length(fishnet), by = nx)
+  linesY <- lapply(0:(nx-1), FUN = function(i, seqY, fishnet){
+
+    if(i == 0){
+      index <- seqY
+    } else {
+      index <- seqY+i
+    }
+
+    line <- fishnet[index] %>% st_combine(.) %>%
+      sf::st_multilinestring(x = ., dim = "XY") %>%
+      st_sfc(.) %>%
+      sf::st_sf(ID = paste0("Y", i), geometry = .)
+
+    return(line)
+  }, seqY = seqY, fishnet) %>% do.call(what = rbind, args = .)
+
+
+
+  fishnet.multi <- rbind(linesX, linesY)
+
+  if(!all(sf::st_is_valid(fishnet.multi)))
+  {
+    warning("Fishnet contains invalid geometries!")
+  }
+
+  return(fishnet.multi)
+} # end of function st_make_grid_lines

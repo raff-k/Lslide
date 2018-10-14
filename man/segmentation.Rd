@@ -40,7 +40,8 @@ segmentation(Tool, Segments.Grid, Segments.Poly, Input.Grid,
   Grass.SLIC.Memory = 300, Grass.SLIC.Perturb = 0,
   burn.Boundary.into.Segments = FALSE, estimateScaleParameter = FALSE,
   Mode.Filter.Flac = FALSE, Mode.Filter.Size = 7,
-  Mode.Filter.Segment.MinSize = 3, par.i = "", ...)
+  Mode.Filter.Segment.MinSize = 3, par.i = "", Sieving.Flac = FALSE,
+  Sieving.Mode = "0", Sieving.Thresh = 4, Sieving.Expand = 4, ...)
 }
 \arguments{
 \item{Tool}{GRASS, SAGA or GRASS Superixels SLIC. Definition of open-source software which will be used}
@@ -152,6 +153,14 @@ segmentation(Tool, Segments.Grid, Segments.Poly, Input.Grid,
 \item{Mode.Filter.Segment.MinSize}{objects smaller and equal to this size are selected for filtering. Default: 3}
 
 \item{par.i}{run number. Default: ""}
+
+\item{Sieving.Flac}{perform sieving. Default: FALSE}
+
+\item{Sieving.Mode}{sieving mode. Default:"0"}
+
+\item{Sieving.Thresh}{minsize of clumps. Default: 4}
+
+\item{Sieving.Expand}{expand cells using majority filter. radius in cell sizes. Default:4}
 }
 \description{
 This function uses the open-source software of GRASS and SAGA GIS

@@ -4,8 +4,7 @@
 \alias{Objective.Function}
 \title{Objective Function}
 \usage{
-Objective.Function(Tool, Scale.Input.Grid,
-  Scale.Input.Grid.Cell.Size = prod(raster::res(raster::raster(slp.tif.path))),
+Objective.Function(Tool, Scale.Input.Grid, Scale.Input.Grid.Cell.Size = NULL,
   Scale.Statistic.Min.Size = "0", Objective.Function.save = FALSE,
   Objective.Function.save.path = NULL, Count = "1", Min = "0",
   Max = "0", Range = "0", Sum = "0", Mean = "1", Var = "1",
@@ -16,10 +15,14 @@ Objective.Function(Tool, Scale.Input.Grid,
   "Objective.Function.Count.Grid.sgrd"),
   Objective.Function.MoransI = paste0(tmp.path,
   "Objective.Function.MoransI.txt"), Quantile = 0, Scales,
-  Grass.Objective.Function.Method = "Threshold", Segments.Poly,
+  Grass.Objective.Function.Method = "Threshold", Segments.Poly, Segments.Grid,
   Grass.Segmentation.Minsize = NA, Grass.Segmentation.Threshold = NA,
   Seed.Method = "", env = RSAGA::rsaga.env(),
-  show.output.on.console = FALSE, quiet = TRUE, ...)
+  show.output.on.console = FALSE, quiet = TRUE,
+  HiPassFilter.input.segmentation = NULL,
+  HiPassFilter.input.filter = Scale.Input.Grid,
+  HiPassFilter.scale.factor = NULL, HiPassFilter.threshold = NULL,
+  do.storeGrids = FALSE, ...)
 }
 \arguments{
 \item{Tool}{open-source software to compute segmentation analysis. GRASS or SAGA}
@@ -73,6 +76,10 @@ Objective.Function(Tool, Scale.Input.Grid,
 \item{Seed.Method}{""}
 
 \item{env}{...}
+
+\item{HiPassFilter.input.segmentation}{path to load}
+
+\item{HiPassFilter.input.filter}{path to load}
 
 \item{other...}{see \code{\link{segmentation}}}
 }

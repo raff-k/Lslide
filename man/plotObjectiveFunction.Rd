@@ -7,7 +7,8 @@
 plotObjectiveFunction(x, legend.position = "bottom", title = "",
   selected.Scale = NULL, selected.Scale.label = "selected scale",
   col.OF = "#DC143C", col.PF = "black", col.nIV = "#6495ED",
-  col.nMI = "#8B4513", col.sSl = "gold", ...)
+  col.nMI = "#8B4513", col.sSl = "gold", selected.Scale.size = 4,
+  selected.Scale.shape = 1, selected.Scale.stroke = 1.2, ...)
 }
 \arguments{
 \item{x}{result of function \code{\link{ObjectiveFunction}}}
@@ -29,6 +30,12 @@ plotObjectiveFunction(x, legend.position = "bottom", title = "",
 \item{col.nMI}{line color for normalized Moran's I. Default: "#8B4513"}
 
 \item{col.sSl}{point color for selected scale parameter. Default: "gold"}
+
+\item{selected.Scale.size}{scale size of selected point. Default: 4}
+
+\item{selected.Scale.shape}{shape of selected point. Default: 1}
+
+\item{selected.Scale.stroke}{width of outline of selected point. Default: 1.2}
 
 \item{...}{ggplot-theme options}
 }
