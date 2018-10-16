@@ -404,8 +404,8 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
   if(!is.null(geom.boundary)){ geom.boundary$ID_BOUNDS <- 1:nrow(geom.boundary) } # ## add unique IDs
 
   ## add Area in m_sq
-  geom.frag$A_FRAG <- sf::st_area(geom.frag) %>% as.numeric() %>% `/` (conv) # units::drop_units(.)
-  if(!is.null(geom.boundary)){ geom.boundary$A_BOUNDS <- sf::st_area(geom.boundary) %>% as.numeric() %>% `/` (conv)}
+  geom.frag$A_FRAG <- sf::st_area(geom.frag) %>% as.numeric() %>% "/" (conv) # units::drop_units(.)
+  if(!is.null(geom.boundary)){ geom.boundary$A_BOUNDS <- sf::st_area(geom.boundary) %>% as.numeric() %>% "/" (conv)}
 
 
   ## subset data
@@ -421,7 +421,7 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
     if(!quiet) cat("... intersection to boundary \n")
     inter <- suppressWarnings(sf::st_intersection(x = geom.boundary, y = geom.frag))
     inter <- suppressWarnings(inter %>% st_cast(., "MULTIPOLYGON") %>% sf::st_cast(., "POLYGON")) # cast is necessairy to split multi-polygons
-    inter$A_FRAG_INTER <- sf::st_area(inter) %>% as.numeric() %>% `/` (conv) # overwrite area of fragments, # units::drop_units(.)
+    inter$A_FRAG_INTER <- sf::st_area(inter) %>% as.numeric() %>% "/" (conv) # overwrite area of fragments, # units::drop_units(.)
 
     ## calculation of mesh indices
     df.inter <- sf::st_set_geometry(x = inter, value = NULL) %>% data.table::as.data.table(.)
