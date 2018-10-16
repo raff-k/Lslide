@@ -311,7 +311,7 @@ st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 
 
 
     erase <- suppressWarnings(sf::st_intersection(x = geom.boundary, y = erase) %>%
-                              # sf::st_collection_extract(x = ., type = c("POLYGON")) %>%
+                              sf::st_collection_extract(x = ., type = c("POLYGON")) %>%
                               st_cast(., "MULTIPOLYGON") %>% sf::st_cast(., "POLYGON"))
     dt.erase  <- erase  %>%
                 sf::st_set_geometry(x = ., value = NULL) %>%
