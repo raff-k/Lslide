@@ -17,6 +17,56 @@ st_erase = function(x, y) sf::st_difference(x, sf::st_union(sf::st_combine(y))) 
 
 
 
+#' Erase one geometry from another using Saga GIS
+#'
+#' This function erase one geometry from another. The projection must be identical.
+#'
+#' @param x object of class sf. First element: Should be either line or polygon
+#' @param y object of class sf. Second element: Always polygon.
+#' @param method method of erase. Either "1": , or "2": Line-Polygon Intersection. Default: "1"
+#' @param split Set to "1", if multi-part polygons should be splitted to single-part polygons. Default: "0"
+#' @param attributes attributes inherited to intersection result. [0] polygon, [1] line, [2] line and polygon. Default: "1"
+#' @param env.rsaga SAGA GIS environemnt. Default: RSAGA::rsaga.env()
+#' @return
+#' Geometry of class sfc
+#'
+#'
+#' @keywords simple feature, erase
+#'
+#'
+#' @export
+#'
+rsaga_erase = function(x, y, method = "1", split = "0", attributes = "1", env.rsaga = RSAGA::rsaga.env(), quiet = TRUE)
+{
+  path.x <- file.path(tempdir(), "tmp_x.shp")
+  path.y <- file.path(tempdir(), "tmp_y.shp")
+  path.result <- file.path(tempdir(), "tmp_result.shp")
+
+  sf::st_write(obj = x, dsn = path.x, delete_layer = TRUE, quiet = quiet)
+  sf::st_write(obj = y, dsn = path.y, delete_layer = TRUE, quiet = quiet)
+
+  if(method == "1")
+  {
+    # RSAGA::rsaga.get.usage(lib = "shapes_polygons", module = 15, env = env.rsaga)
+    RSAGA::rsaga.geoprocessor(lib = "shapes_polygons", module = 15, env = env.rsaga, show.output.on.console = !quiet, param = list(
+      A = path.x, B = path.y, RESULT = "1", DIFFERENCE = path.result, SPLIT = split))
+  }
+
+  if(method == "2")
+  {
+    # RSAGA::rsaga.get.usage(lib = "shapes_lines", module = 3, env = env.rsaga)
+    # ATTRIBUTES: [1] line
+    RSAGA::rsaga.geoprocessor(lib = "shapes_lines", module = 3, env = env.rsaga, show.output.on.console = !quiet, param = list(
+      LINES = path.x, POLYGONS = path.y, ATTRIBUTES = attributes, DIFFERENCE = path.result))
+  }
+
+  out <- sf::st_read(dsn = path.result, quiet = quiet)
+  return(out)
+}
+
+
+
+
 #' Return geometry from bounding box
 #'
 #' This function calculate the geometry based on a bounding box.
@@ -163,7 +213,7 @@ st_shape_indices = function(x){
 #' @param geom.old object of class sf representing a land use class of a previous time step
 #' @param geom.new object of class sf representing a land use class of a following time step
 #' @param geom.boundary polygon of class sf representing subregions, e.g. administrative boundaries
-#' @param tol tolerance value for overlapping area1 m square
+#' @param tol tolerance value for overlapping area m square
 #' @param return.geom If set to TRUE, intermediate geometries are returned as well. Default: FALSE
 #' @param quiet show output on console. Default: FALSE
 #' @return
@@ -432,13 +482,17 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
 #' @param geom.urban polygon of class sf representing the fragmentation geometry
 #' @param geom.boundary polygon of class sf representing subregions, e.g. administrative boundaries
 #' @param dist vector containing distance between lines in x and y direction. Default: c(100, 100) [m]
+#' @param trans transformation function {x-1+1/(x+trans.k)} with x as free line and trans.k a constant
+#' @param trans.k constant in km for transformation function trans. Default: 1
+#' @param tol tolerance value for intersection with erased lines. Buffering procedure is used.Default: 0.1 [m]
 #' @param extent Numeric value representing extent for area. Format of vector: c(xmin, xmax, ymax, ymin) . Default: NULL
 #' @param force.extent If TRUE extent is used instead of geom.boundary (if both are present). Default: FALSE
 #' @param do.preProcessing If TRUE (default), the input of geom.frag is, first, dissolved to single part feature, and second, splitted to multi-parts. By this step it is assured, that polygon connected to each other are summarized
 #' @param return.geom If set to TRUE, intermediate geometries are returned as well. Default: FALSE
+#' @param env.rsaga environment of SAGA GIS. Must be set for erase. Default: RSAGA::rsaga.env()
 #' @param quiet If set to FALSE, actual state is printed to console. Default: TRUE.
 #' @return
-#' ....
+#'  strong urban sprawl: 40-50%, less urban sprawl: 80-90%
 #'
 #'
 #' @keywords simple feature, urban sprawl
@@ -446,7 +500,8 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
 #'
 #' @export
 #'
-st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100), extent = NULL, force.extent = FALSE, do.preProcessing = TRUE, return.geom = FALSE, quiet = TRUE)
+st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100), trans = function(x, trans.k){x-1+1/(x+trans.k)}, trans.k = 1, tol = 0.1, extent = NULL, force.extent = FALSE,
+                           do.preProcessing = TRUE, env.rsaga = RSAGA::rsaga.env(), return.geom = FALSE, quiet = TRUE)
 {
   # get start time of process
   process.time.start <- proc.time()
@@ -483,35 +538,144 @@ st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100),
 
   ## create and subset fish net
   if(!quiet) cat("... create fishnet \n")
-  fishnet <- st_make_grid_lines(x = bbox.fishnet, cellsize = dist)
+  fishnet <- Lslide::st_make_grid_lines(x = bbox.fishnet, cellsize = dist)
 
   if(!is.null(geom.boundary) & !force.extent){
     if(!quiet) cat("... subset fishnet to area of interest \n")
-    fishnet <- suppressWarnings(sf::st_intersection(x = fishnet, y = geom.boundary))
+    fishnet <- suppressWarnings(sf::st_intersection(x = fishnet, y = geom.boundary)) %>%
+                sf::st_collection_extract(x = ., type = "LINESTRING", warn = FALSE)
+  } else {
+    fishnet <- suppressWarnings(sf::st_intersection(x = fishnet, y = bbox.fishnet)) %>%
+      sf::st_collection_extract(x = ., type = "LINESTRING", warn = FALSE)
+  }
+
+  # fishnet <- fishnet[, c("ID", "geometry")]
+
+
+  ## do post-processing of urban geometry
+  if(do.preProcessing)
+  {
+    if(!quiet) cat("... union geometries to a single geometry with resolved boundaries \n")
+    geom.urban <- geom.urban %>% sf::st_union(.)
+
+    if(!quiet) cat("... split multi-parts to single-parts polygon \n")
+    geom.urban <- geom.urban %>% st_cast(., "POLYGON") %>% sf::st_sf(ID_URBAN = 1:length(.), geometry = .)
+  } else {
+    geom.urban$ID_URBAN <- 1:nrow(geom.urban) ## add unique IDs
+  }
+
+  ## check intersection
+  inter.check <- sf::st_intersects(x = geom.urban, y = fishnet)
+  inter.empty <- which(sapply(inter.check, function(x) length(x) == 0))
+  if(length(inter.empty) > 0)
+  {
+    inter.A <- geom.urban[inter.empty,] %>% sf::st_area(.) %>% as.numeric(.)
+    inter.num <- length(inter.empty)
+
+    warning('Some urban polygons are not intersected by fishnet: ', inter.num,
+            ' | area min: ', min(inter.A, na.rm = TRUE), ' - max: ', max(inter.A, na.rm = TRUE), ' [m_sqr] \n')
   }
 
 
-  ## erase urba area from fishnet
+  ## erase urban area from fishnet using SAGA GIS
   if(!quiet) cat("... erase urban area from fishnet \n")
-  erase <- suppressWarnings(Lslide::st_erase(x = fishnet, y = geom.urban))
+  # erase <- suppressWarnings(Lslide::st_erase(x = fishnet, y = geom.urban))
+  erase <- rsaga_erase(x = fishnet, y = geom.urban, method = "2", env.rsaga = env.rsaga)
 
-  # # # # HERE TO GO ON!!!!
 
-  inter.single <- sf::st_cast(x = inter, to = 'LINESTRING')
+  ## split to single part
+  erase.single <- erase %>% sf::st_cast(x = ., to = 'LINESTRING', warn = FALSE)
 
-  sf::st_write(obj = inter.single, dsn = "D:/Users/rAVer/Desktop/Temp/FishNet_InterSingle.shp", delete_layer = T)
+
+  ## selection of lines
+  if(!quiet) cat("... selection of lines \n")
+  lines.urban <- sf::st_intersects(x = geom.urban %>%
+                                     sf::st_buffer(x = ., dist = tol),
+                                   y = erase.single) %>%
+                unlist(.) %>% unique(.)
+
+
+  if(!is.null(geom.boundary) & !force.extent)
+  {
+    lines.boundary <- sf::st_intersects(x = geom.boundary %>%
+                                          sf::st_boundary(x = .) %>%
+                                          sf::st_buffer(x = ., dist = tol),
+                                        y = erase.single) %>%
+                      unlist(.) %>% unique(.)
+  } else {
+    lines.boundary <- sf::st_intersects(x = bbox.fishnet %>%
+                                          sf::st_boundary(x = .) %>%
+                                          sf::st_buffer(x = ., dist = tol),
+                                        y = erase.single) %>%
+                      unlist(.) %>% unique(.)
+  }
+
+
+  # lines.urban  %>% length(.)
+  # lines.boundary %>% length(.)
+
+  check.missing <- setdiff(c(1:nrow(erase.single)),
+                     (c(lines.urban, lines.boundary)  %>% unique(.)))
+
+  if(length(check.missing) > 0)
+  {
+    warning("Some lines are neither intersected by boundary nor by urban area: ", length(check.missing), " in total \n")
+  }
+
+  erase.single$Type <- NA
+
+  # TPYE 1: Lines between urban area (red lines)
+  type.urban <- setdiff(x = lines.urban, y = lines.boundary)
+  erase.single$Type[type.urban] <- 1
+
+  # TPYE 2: Lines not touching urban area (blue lines)
+  type.boundary <- setdiff(x = lines.boundary, y = lines.urban)
+  erase.single$Type[type.boundary] <- 2
+
+  # TYPE 3: Lines between boundary and urban area (green lines)
+  type.bound.urb <- intersect(x = lines.urban, y = lines.boundary)
+  erase.single$Type[type.bound.urb] <- 3
+
+  # summary(erase.single$Type)
+  # c(type.bound.urb, type.boundary, type.urban) %>% unique(.) %>% length(.)
+
+  ## group single lines back to multi-lines
+  if((!is.null(geom.boundary) & !force.extent))
+  {
+    erase.final <- st_dissolve(x = erase.single, by = list("Type", "ID_FNET", "ID_BOUNDS"))
+  } else {
+    erase.final <- st_dissolve(x = erase.single, by = list("Type", "ID_FNET"))
+  }
+
+  erase.final$L <- sf::st_length(x = erase.final) %>% as.numeric(.) %>% "/" (1000) # convert from meter to km!
+  erase.final$L_trans <- ifelse(erase.final$Type == 2, erase.final$L, trans(x = erase.final$L, trans.k = trans.k))
+
+
+  ## summarizing final data
+  if(!quiet) cat("... get statistics: urban sprawl \n")
+
+  if((!is.null(geom.boundary) & !force.extent))
+  {
+    df.result <- erase.final %>% sf::st_set_geometry(x = ., value = NULL) %>%
+                                 data.table::as.data.table(.) %>%
+                                  .[,list(L = sum(L, na.rm = TRUE),
+                                          L_trans = sum(L_trans, na.rm = TRUE)), by = ID_BOUNDS] %>%
+                                  dplyr::mutate(.data = ., FFE = L_trans/L*100)
+  } else {
+    df.result <- erase.final %>% sf::st_set_geometry(x = ., value = NULL) %>%
+                                 data.table::as.data.table(.) %>%
+                                 .[,list(L = sum(L, na.rm = TRUE),
+                                            L_trans = sum(L_trans, na.rm = TRUE)),] %>%
+                                 dplyr::mutate(.data = ., FFE = L_trans/L*100)
+  }
+
 
   process.time.run <- proc.time() - process.time.start
   if(quiet == FALSE) cat("------ Run of urban_sprawl: " , round(process.time.run["elapsed"][[1]]/60, digits = 4), " Minutes \n")
 
   if(return.geom)
   {
-    if(is.null(geom.boundary))
-    {
-      return(list(mesh = df.result, geom.frag = geom.frag))
-    } else {
-      return(list(mesh = df.result, geom.frag = geom.frag, geom.inter = inter))
-    }
+    return(list(FFE = df.result, geom = erase.final))
   } else {
     return(df.result)
   }
@@ -558,7 +722,7 @@ st_make_grid_lines = function(x, cellsize)
     line <- fishnet[index] %>% st_combine(.) %>%
       sf::st_multilinestring(x = ., dim = "XY") %>%
       st_sfc(.) %>%
-      sf::st_sf(ID = paste0("X", i), geometry = .)
+      sf::st_sf(ID_FNET = paste0("X", i), geometry = .)
 
     return(line)
   }, nx = nx, fishnet = fishnet) %>% do.call(what = rbind, args = .)
@@ -575,7 +739,7 @@ st_make_grid_lines = function(x, cellsize)
     line <- fishnet[index] %>% st_combine(.) %>%
       sf::st_multilinestring(x = ., dim = "XY") %>%
       st_sfc(.) %>%
-      sf::st_sf(ID = paste0("Y", i), geometry = .)
+      sf::st_sf(ID_FNET = paste0("Y", i), geometry = .)
 
     return(line)
   }, seqY = seqY, fishnet) %>% do.call(what = rbind, args = .)
@@ -583,6 +747,7 @@ st_make_grid_lines = function(x, cellsize)
 
 
   fishnet.multi <- rbind(linesX, linesY)
+  sf::st_crs(fishnet.multi) <- sf::st_crs(fishnet)
 
   if(!all(sf::st_is_valid(fishnet.multi)))
   {
