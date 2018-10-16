@@ -27,6 +27,7 @@ st_erase = function(x, y) sf::st_difference(x, sf::st_union(sf::st_combine(y))) 
 #' @param split Set to "1", if multi-part polygons should be splitted to single-part polygons. Default: "0"
 #' @param attributes attributes inherited to intersection result. [0] polygon, [1] line, [2] line and polygon. Default: "1"
 #' @param env.rsaga SAGA GIS environemnt. Default: RSAGA::rsaga.env()
+#' @param check.geom If set to TRUE then geometry is checked with sf::st_is_valid(). If there are invalid geometries, geometries are repaired using lwgeom::st_make_valid(). Default: TRUE
 #' @return
 #' Geometry of class sfc
 #'
@@ -36,7 +37,7 @@ st_erase = function(x, y) sf::st_difference(x, sf::st_union(sf::st_combine(y))) 
 #'
 #' @export
 #'
-rsaga_erase = function(x, y, method = "1", split = "0", attributes = "1", env.rsaga = RSAGA::rsaga.env(), quiet = TRUE)
+rsaga_erase = function(x, y, method = "1", split = "0", attributes = "1", env.rsaga = RSAGA::rsaga.env(), check.geom = TRUE, quiet = TRUE)
 {
   path.x <- file.path(tempdir(), "tmp_x.shp")
   path.y <- file.path(tempdir(), "tmp_y.shp")
@@ -60,7 +61,15 @@ rsaga_erase = function(x, y, method = "1", split = "0", attributes = "1", env.rs
       LINES = path.x, POLYGONS = path.y, ATTRIBUTES = attributes, DIFFERENCE = path.result))
   }
 
+  ## read data
   out <- sf::st_read(dsn = path.result, quiet = quiet)
+
+  ## check validity
+  if(check.geom && !all(sf::st_is_valid(out)))
+  {
+    warning('Some invalid geometries by "rsaga_erase". Try to correct geomeries using lwgeom::st_make_valid()!')
+    out <- lwgeom::st_make_valid(x = out)
+  }
   return(out)
 }
 
