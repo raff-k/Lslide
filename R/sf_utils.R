@@ -69,6 +69,16 @@ rsaga_erase = function(x, y, method = "1", split = "0", attributes = "1", env.rs
   {
     warning('Some invalid geometries by "rsaga_erase". Try to correct geomeries using lwgeom::st_make_valid()!')
     out <- lwgeom::st_make_valid(x = out)
+
+    if(method == "1")
+    {
+      out <- suppressWarnings(out %>% sf::st_collection_extract(x = ., type = c("POLYGON")))
+    }
+
+    if(method == "2")
+    {
+      out <- suppressWarnings(out %>%  sf::st_collection_extract(x = ., type = c("LINESTRING")))
+    }
   }
   return(out)
 }
@@ -623,6 +633,7 @@ st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100),
   erase <- rsaga_erase(x = fishnet, y = geom.urban, method = "2", env.rsaga = env.rsaga)
 
 
+
   ## split to single part
   erase.single <- erase %>% sf::st_cast(x = ., to = 'LINESTRING', warn = FALSE)
 
@@ -679,12 +690,21 @@ st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100),
   # summary(erase.single$Type)
   # c(type.bound.urb, type.boundary, type.urban) %>% unique(.) %>% length(.)
 
+  # browser()
+
   ## group single lines back to multi-lines
   if((!is.null(geom.boundary) & !force.extent))
   {
-    erase.final <- st_dissolve(x = erase.single, by = list("Type", "ID_FNET", "ID_BOUNDS"))
+    erase.final <- st_dissolve(x = erase.single[which(erase.single$Type == 2 | erase.single$Type == 3),],
+                               by = list("Type", "ID_FNET", "ID_BOUNDS"))
+
+    erase.final <- rbind(erase.final, erase.single[which(erase.single$Type == 1),])
+
   } else {
-    erase.final <- st_dissolve(x = erase.single, by = list("Type", "ID_FNET"))
+    erase.final <- st_dissolve(x = erase.single[which(erase.single$Type == 2 | erase.single$Type == 3),],
+                               by = list("Type", "ID_FNET"))
+
+    erase.final <- rbind(erase.final, erase.single[which(erase.single$Type == 1),])
   }
 
   erase.final$L <- sf::st_length(x = erase.final) %>% as.numeric(.) %>% "/" (1000) # convert from meter to km!
