@@ -49,7 +49,7 @@ rsaga_erase = function(x, y, method = "1", split = "0", attributes = "1", env.rs
   {
     # RSAGA::rsaga.get.usage(lib = "shapes_polygons", module = 15, env = env.rsaga)
     RSAGA::rsaga.geoprocessor(lib = "shapes_polygons", module = 15, env = env.rsaga, show.output.on.console = !quiet, param = list(
-      A = path.x, B = path.y, RESULT = "1", DIFFERENCE = path.result, SPLIT = split))
+      A = path.x, B = path.y, RESULT = path.result, SPLIT = split))
   }
 
   if(method == "2")
@@ -173,7 +173,7 @@ st_rbind = function(x, geom) x %>% lapply(X = ., FUN = function(x) sf::st_set_ge
 #'
 #' @export
 #'
-st_perimeter = function(x) x %>% st_cast("MULTILINESTRING") %>% sf::st_length(.) %>% as.numeric(.) # units::drop_units(.)
+st_perimeter = function(x, ...) suppressWarnings(x %>% sf::st_cast(x = ., to = "MULTILINESTRING", ...) %>% sf::st_length(.) %>% as.numeric(.)) # units::drop_units(.)
 
 
 
@@ -214,6 +214,8 @@ st_shape_indices = function(x){
 #' @param geom.new object of class sf representing a land use class of a following time step
 #' @param geom.boundary polygon of class sf representing subregions, e.g. administrative boundaries
 #' @param tol tolerance value for overlapping area m square
+#' @param env.rsaga environment of SAGA GIS. If st_erase fails then SAGA GIS erase is used. Default: NULL, but in function call if not set: RSAGA::rsaga.env()
+#' @param use.saga use SAGA GIS for erase process. Default: FALSE
 #' @param return.geom If set to TRUE, intermediate geometries are returned as well. Default: FALSE
 #' @param quiet show output on console. Default: FALSE
 #' @return
@@ -225,7 +227,7 @@ st_shape_indices = function(x){
 #'
 #' @export
 #'
-st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 0.1, ignr.overlap = FALSE, return.geom = FALSE, quiet = FALSE){
+st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 0.1, ignr.overlap = FALSE, env.rsaga = NULL, use.saga = FALSE, return.geom = FALSE, quiet = FALSE){
 
   # get start time of process
   process.time.start <- proc.time()
@@ -251,10 +253,37 @@ st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 
 
   ## new area
   if(!quiet) cat('... erase intersection from "geom.new" (this can take a while!) \n')
-  erase <- suppressWarnings(Lslide::st_erase(x = geom.new, y = inter) %>%
+
+  if(use.saga)
+  {
+    if(is.null(env.rsaga))
+    {
+      env.rsaga <-  RSAGA::rsaga.env()
+    }
+
+    erase <- Lslide::rsaga_erase(x = geom.new, y = inter, method = "1",
+                                 split = "1", env.rsaga = env.rsaga) %>%
+            .[which(x = as.numeric(sf::st_area(.)) >= tol),]
+
+  } else {
+      erase <- tryCatch({
+                      suppressWarnings(Lslide::st_erase(x = geom.new, y = inter) %>%
                             sf::st_collection_extract(x = ., type = c("POLYGON")) %>%
                             sf::st_cast(x = ., to = "POLYGON") %>%
                             .[which(x = as.numeric(sf::st_area(.)) >= tol)])
+                    }, error = function(e){
+                      warning(paste('SAGA GIS is used due to error in st_erase():', e))
+                              if(is.null(env.rsaga))
+                              {
+                                env.rsaga <-  RSAGA::rsaga.env()
+                              }
+                       tmp.erase <- Lslide::rsaga_erase(x = geom.new, y = inter, method = "1",
+                                                        split = "1", env.rsaga = env.rsaga) %>%
+                                    .[which(x = as.numeric(sf::st_area(.)) >= tol),]
+                      return(tmp.erase)
+                      })
+    } # end of use.saga
+
 
   if(!quiet) cat('... conversion to lines \n')
   line.erase <-  sf::st_cast(x = erase, to = "MULTILINESTRING")
