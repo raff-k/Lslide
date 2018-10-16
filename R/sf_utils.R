@@ -707,8 +707,8 @@ st_make_grid_lines = function(x, cellsize)
 
   # ... get sf::st_make_grid function parameters (automatically calculated in function call)
   offset <- sf::st_bbox(obj =  x)[1:2]
-  nx <- ceiling((sf::st_bbox(obj = x)[3] - offset[1])/dist[1]) + 1 # add 1 to fit overall columns
-  ny <- ceiling((sf::st_bbox(obj = x)[4] - offset[2])/dist[2]) + 1 # add 1 to fit overall rows
+  nx <- ceiling((sf::st_bbox(obj = x)[3] - offset[1])/cellsize[1]) + 1 # add 1 to fit overall columns
+  ny <- ceiling((sf::st_bbox(obj = x)[4] - offset[2])/cellsize[2]) + 1 # add 1 to fit overall rows
 
   # ... create lines
   linesX <- lapply(1:ny, function(i, nx, fishnet){
