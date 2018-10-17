@@ -260,8 +260,8 @@ st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 
   if(!is.null(geom.boundary) && !all(sf::st_is_valid(geom.boundary))){ stop('Input of "geom.boundary" contains not valid geometries. Please try lwgeom::st_make_valid().')}
 
   if(!quiet) cat("... union input geometries \n")
-  geom.old <- sf::st_union(x = geom.old)
-  geom.new <- sf::st_union(x = geom.new)
+  geom.old <- sf::st_union(x = geom.old) %>% sf::st_cast(., "POLYGON")
+  geom.new <- sf::st_union(x = geom.new) %>% sf::st_cast(., "POLYGON")
 
   # # # # START CALCULATION OF INTEGRATION INDEX
   ## check for overlapping polygon
