@@ -13,7 +13,31 @@
 #'
 #' @export
 #'
-st_erase = function(x, y) sf::st_difference(x, sf::st_union(sf::st_combine(y))) # erase y from x
+st_erase = function(x, y, precision = 0, do.subset = TRUE)
+{
+  if(do.subset)
+  {
+    inter <- sf::st_intersects(x = y, y = x)  %>% unlist(.) %>% unique(.)
+    x.remain <- x[-inter,]
+    x <- x[inter,]
+  }
+
+  if(precision != 0)
+  {
+    x <- x %>% sf::st_set_precision(x = ., precision = precision) %>% lwgeom::st_make_valid(.)
+    y <- y %>% sf::st_combine(.) %>% sf::st_union(.) %>%
+               sf::st_set_precision(x = ., precision = precision) %>% lwgeom::st_make_valid(.)
+  }
+
+  out <- sf::st_difference(x = x, y = y) # erase y from x
+
+  if(do.subset)
+  {
+    out <- rbind(out, x.remain)
+  }
+
+  return(out)
+}
 
 
 
@@ -233,6 +257,7 @@ st_shape_indices = function(x){
 #' @param geom.new object of class sf representing a land use class of a following time step
 #' @param geom.boundary polygon of class sf representing subregions, e.g. administrative boundaries
 #' @param tol tolerance value for overlapping area m square
+#' @param precision precision for process. See sf::st_set_precision(). Default: 100
 #' @param env.rsaga environment of SAGA GIS. If st_erase fails then SAGA GIS erase is used. Default: NULL, but in function call if not set: RSAGA::rsaga.env()
 #' @param use.saga use SAGA GIS for erase process. Default: FALSE
 #' @param return.geom If set to TRUE, intermediate geometries are returned as well. Default: FALSE
@@ -246,7 +271,8 @@ st_shape_indices = function(x){
 #'
 #' @export
 #'
-st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 0.1, ignr.overlap = FALSE, env.rsaga = NULL, use.saga = FALSE, return.geom = FALSE, quiet = FALSE){
+st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 0.1, precision = 100,
+                                ignr.overlap = FALSE, env.rsaga = NULL, use.saga = FALSE, return.geom = FALSE, quiet = FALSE){
 
   # get start time of process
   process.time.start <- proc.time()
@@ -254,21 +280,39 @@ st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 
   ## check input
   if(missing(geom.old) || missing(geom.new)){ stop('Input is missing!')}
 
+  ## check and set precision
+  if(!quiet) cat("... check and set st_precision \n")
+  if(sf::st_precision(geom.old) != precision)
+  {
+    geom.old <- geom.old %>% sf::st_set_precision(x = ., precision = precision) %>%
+      lwgeom::st_make_valid(.) %>%
+      sf::st_collection_extract(x = ., type = "POLYGON")
+  }
+
+  if(sf::st_precision(geom.new) != precision)
+  {
+    geom.new <- geom.new %>% sf::st_set_precision(x = ., precision = precision) %>%
+      lwgeom::st_make_valid(.) %>%
+      sf::st_collection_extract(x = ., type = "POLYGON")
+  }
+
   ## check validity of geometries
   if(!all(sf::st_is_valid(geom.old))){ stop('Input of "geom.old" contains not valid geometries. Please try lwgeom::st_make_valid().')}
   if(!all(sf::st_is_valid(geom.new))){ stop('Input of "geom.new" contains not valid geometries. Please try lwgeom::st_make_valid().')}
   if(!is.null(geom.boundary) && !all(sf::st_is_valid(geom.boundary))){ stop('Input of "geom.boundary" contains not valid geometries. Please try lwgeom::st_make_valid().')}
 
-  if(!quiet) cat("... union input geometries \n")
-  geom.old <- sf::st_union(x = geom.old) %>% sf::st_cast(., "POLYGON")
-  geom.new <- sf::st_union(x = geom.new) %>% sf::st_cast(., "POLYGON")
+  # if(!quiet) cat("... union input geometries \n")
+  # geom.old <- sf::st_union(x = geom.old) %>% sf::st_cast(., "POLYGON") %>% sf::st_set_precision(x = ., precision = precision)
+  # geom.new <- sf::st_union(x = geom.new) %>% sf::st_cast(., "POLYGON") %>% sf::st_set_precision(x = ., precision = precision)
 
   # # # # START CALCULATION OF INTEGRATION INDEX
   ## check for overlapping polygon
 
   ## common area
   if(!quiet) cat("... intersection of input geometries \n")
-  inter <- suppressWarnings(sf::st_intersection(x = geom.old, y = geom.new) %>% sf::st_collection_extract(x = ., type = c("POLYGON")))
+  inter <- suppressWarnings(sf::st_intersection(x = geom.old, y = geom.new) %>%
+                              sf::st_collection_extract(x = ., type = c("POLYGON")))#  %>%
+                              # sf::st_set_precision(x = ., precision = precision)
 
   ## new area
   if(!quiet) cat('... erase intersection from "geom.new" (this can take a while!) \n')
@@ -286,10 +330,10 @@ st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 
 
   } else {
       erase <- tryCatch({
-                      suppressWarnings(Lslide::st_erase(x = geom.new, y = inter) %>%
+                      suppressWarnings(Lslide::st_erase(x = geom.new, y = inter, precision = precision) %>%
                             sf::st_collection_extract(x = ., type = c("POLYGON")) %>%
                             sf::st_cast(x = ., to = "POLYGON") %>%
-                            .[which(x = as.numeric(sf::st_area(.)) >= tol)])
+                            .[which(x = as.numeric(sf::st_area(.)) >= tol),])
                     }, error = function(e){
                       warning(paste('SAGA GIS is used due to error in st_erase():', e))
                               if(is.null(env.rsaga))
@@ -305,8 +349,8 @@ st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 
 
 
   if(!quiet) cat('... conversion to lines \n')
-  line.erase <-  sf::st_cast(x = erase, to = "MULTILINESTRING")
-  line.inter <- sf::st_cast(x = inter, to = "MULTILINESTRING")
+  line.erase <-  sf::st_cast(x = erase, to = "MULTILINESTRING") %>% sf::st_set_precision(x = ., precision = precision)
+  line.inter <- sf::st_cast(x = inter, to = "MULTILINESTRING") %>% sf::st_set_precision(x = ., precision = precision)
 
   ## common border
   if(!quiet) cat('... find border lines by intersection \n')
@@ -535,11 +579,13 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
 #' @param trans transformation function {x-1+1/(x+trans.k)} with x as free line and trans.k a constant
 #' @param trans.k constant in km for transformation function trans. Default: 1
 #' @param tol tolerance value for intersection with erased lines. Buffering procedure is used.Default: 0.1 [m]
+#' @param precision precision for process. See sf::st_set_precision(). Default: 100
 #' @param extent Numeric value representing extent for area. Format of vector: c(xmin, xmax, ymax, ymin) . Default: NULL
 #' @param force.extent If TRUE extent is used instead of geom.boundary (if both are present). Default: FALSE
 #' @param do.preProcessing If TRUE (default), the input of geom.frag is, first, dissolved to single part feature, and second, splitted to multi-parts. By this step it is assured, that polygon connected to each other are summarized
 #' @param return.geom If set to TRUE, intermediate geometries are returned as well. Default: FALSE
-#' @param env.rsaga environment of SAGA GIS. Must be set for erase. Default: RSAGA::rsaga.env()
+#' @param env.rsaga environment of SAGA GIS. If st_erase fails then SAGA GIS erase is used. Default: NULL, but in function call if not set: RSAGA::rsaga.env()
+#' @param use.saga use SAGA GIS for erase process. Default: FALSE
 #' @param quiet If set to FALSE, actual state is printed to console. Default: TRUE.
 #' @return
 #'  strong urban sprawl: 40-50%, less urban sprawl: 80-90%
@@ -551,7 +597,7 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
 #' @export
 #'
 st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100), trans = function(x, trans.k){x-1+1/(x+trans.k)}, trans.k = 1, tol = 0.1, extent = NULL, force.extent = FALSE,
-                           do.preProcessing = TRUE, env.rsaga = RSAGA::rsaga.env(), return.geom = FALSE, quiet = TRUE)
+                           precision = 100, do.preProcessing = TRUE, env.rsaga = NULL, use.saga = FALSE, return.geom = FALSE, quiet = TRUE)
 {
   # get start time of process
   process.time.start <- proc.time()
@@ -569,6 +615,14 @@ st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100),
   if(!is.null(geom.boundary) & !is.null(extent)){
     warning('Fish net is created using extent of "geom.boundary". "Extent" is skipped. For "extent" use "force.extent"!')
   }
+
+  if(sf::st_precision(geom.urban) != precision)
+  {
+    geom.urban <- geom.urban %>% sf::st_set_precision(x = ., precision = precision) %>%
+                                 lwgeom::st_make_valid(.) %>%
+                                 sf::st_collection_extract(x = ., type = "POLYGON")
+  }
+
 
   ## check validity of geometries
   if(!all(sf::st_is_valid(geom.urban))){ stop('Input of "geom.urban" contains not valid geometries. Please try lwgeom::st_make_valid().')}
@@ -629,10 +683,18 @@ st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100),
 
   ## erase urban area from fishnet using SAGA GIS
   if(!quiet) cat("... erase urban area from fishnet \n")
-  # erase <- suppressWarnings(Lslide::st_erase(x = fishnet, y = geom.urban))
-  erase <- rsaga_erase(x = fishnet, y = geom.urban, method = "2", env.rsaga = env.rsaga)
 
-
+  if(use.saga)
+  {
+    if(is.null(env.rsaga))
+    {
+      env.rsaga <-  RSAGA::rsaga.env()
+    }
+    erase <-  Lslide::rsaga_erase(x = fishnet, y = geom.urban, method = "2", env.rsaga = env.rsaga)
+  } else {
+    erase <- suppressWarnings(Lslide::st_erase(x = fishnet, y = geom.urban, precision = precision) %>%
+                                sf::st_collection_extract(x = ., type = "LINESTRING"))
+  }
 
   ## split to single part
   erase.single <- erase %>% sf::st_cast(x = ., to = 'LINESTRING', warn = FALSE)
@@ -706,6 +768,8 @@ st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100),
 
     erase.final <- rbind(erase.final, erase.single[which(erase.single$Type == 1),])
   }
+
+  erase.final <- erase.final %>% sf::st_collection_extract(x = ., type = "LINESTRING")
 
   erase.final$L <- sf::st_length(x = erase.final) %>% as.numeric(.) %>% "/" (1000) # convert from meter to km!
   erase.final$L_trans <- ifelse(erase.final$Type == 2, erase.final$L, trans(x = erase.final$L, trans.k = trans.k))
