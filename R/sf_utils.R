@@ -257,7 +257,7 @@ st_shape_indices = function(x){
 #' @param geom.new object of class sf representing a land use class of a following time step
 #' @param geom.boundary polygon of class sf representing subregions, e.g. administrative boundaries
 #' @param tol tolerance value for overlapping area m square
-#' @param precision precision for process. See sf::st_set_precision(). Default: 100
+#' @param precision precision for process. See sf::st_set_precision(). Default: 0
 #' @param env.rsaga environment of SAGA GIS. If st_erase fails then SAGA GIS erase is used. Default: NULL, but in function call if not set: RSAGA::rsaga.env()
 #' @param use.saga use SAGA GIS for erase process. Default: FALSE
 #' @param return.geom If set to TRUE, intermediate geometries are returned as well. Default: FALSE
@@ -271,7 +271,7 @@ st_shape_indices = function(x){
 #'
 #' @export
 #'
-st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 0.1, precision = 100,
+st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 0.1, precision = 0,
                                 ignr.overlap = FALSE, env.rsaga = NULL, use.saga = FALSE, return.geom = FALSE, quiet = FALSE){
 
   # get start time of process
@@ -579,7 +579,7 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
 #' @param trans transformation function {x-1+1/(x+trans.k)} with x as free line and trans.k a constant
 #' @param trans.k constant in km for transformation function trans. Default: 1
 #' @param tol tolerance value for intersection with erased lines. Buffering procedure is used.Default: 0.1 [m]
-#' @param precision precision for process. See sf::st_set_precision(). Default: 100
+#' @param precision precision for process. See sf::st_set_precision(). Default: 0
 #' @param extent Numeric value representing extent for area. Format of vector: c(xmin, xmax, ymax, ymin) . Default: NULL
 #' @param force.extent If TRUE extent is used instead of geom.boundary (if both are present). Default: FALSE
 #' @param do.preProcessing If TRUE (default), the input of geom.frag is, first, dissolved to single part feature, and second, splitted to multi-parts. By this step it is assured, that polygon connected to each other are summarized
@@ -597,7 +597,7 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
 #' @export
 #'
 st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100), trans = function(x, trans.k){x-1+1/(x+trans.k)}, trans.k = 1, tol = 0.1, extent = NULL, force.extent = FALSE,
-                           precision = 100, do.preProcessing = TRUE, env.rsaga = NULL, use.saga = FALSE, return.geom = FALSE, quiet = TRUE)
+                           precision = 0, do.preProcessing = TRUE, env.rsaga = NULL, use.saga = FALSE, return.geom = FALSE, quiet = TRUE)
 {
   # get start time of process
   process.time.start <- proc.time()
