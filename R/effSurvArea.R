@@ -1,56 +1,36 @@
-pacman::p_load(raster, sf, rgrass7, link2GI, RSAGA)
-
-path.test <- "d:/Users/qo23hel/Desktop/Temp/GRASS TOOL"
-path.test <- "D:/Users/rAVer/Desktop/GRASS TOOL"
-elev <- raster::raster("L:/EASICLIM/Geom/Parameters/10m/dtm_10.tif")
-elev.path <- elev@file@name
-elev <- raster::raster(file.path(path.test, "raster_pnt_1.tif"))
-elev.path <- elev@file@name
-pnt <- sf::st_read("L:/EASICLIM/Geom/Landslides/Lslide_pts_TEST.shp")
-maxdist <- 1000
-memory <- 2400
-method = 'bilinear'
-show.output.on.console <- TRUE
-path.aspect <- file.path(path.test, "aspect.tif")
-path.slope <- file.path(path.test, "slope.tif")
-pnt.1 <- pnt[1, ]
-pnt.1 <- sf::st_read(file.path(path.test, "pnt_1.shp"))
-pnt.1_2 <- pnt[1:2, ]
-pnt.1_2 <- sf::st_read(file.path(path.test, "pnt_1_2.shp"))
-pnt <- pnt.1_2
-NAflag <- -99999
-
-bbox <- (sf::st_bbox(pnt.1) + c(-1500, -1500, 1500, 1500)) %>%
-          .[c(1,3,2,4)] %>%
-          raster::extent(.)
-coords.string <- paste0(sf::st_coordinates(pnt.1), collapse = ",")
-coords <- sf::st_coordinates(pnt.1)
-obselev <- pnt.1$ALS_EASICLI
-obselev <- raster::extract(x = elev, y = pnt)
-i <- 1
-pref <- "test"
-sf::st_write(obj = pnt.1, dsn = file.path(path.test, "pnt_1.shp"))
-sf::st_write(obj = pnt.1_2[2,], dsn = file.path(path.test, "pnt_2.shp"))
-sf::st_write(obj = pnt.1_2, dsn = file.path(path.test, "pnt_1_2.shp"))
-sf::st_coordinates(pnt.1)
-
-
-env.rsaga <- RSAGA::rsaga.env(path = "C:/OSGeo4W64/apps/saga-6.3.0")
-
-## subset elev to this point
-elev.subP1 <- raster::crop(x = elev, y = bbox)
-raster::writeRaster(x = elev.subP1, filename =  file.path(path.test, "raster_pnt_1.tif"), NAflag = -99999, overwrite = TRUE)
-
-
-
-
-## init grass gis
-link2GI::linkGRASS7(x = elev, default_GRASS7 = c("C:\\OSGeo4W64", "grass-7.4.0", "osgeo4W"),
-                    gisdbase = path.test, location = "Tool", quiet = FALSE)
-
-
-
-effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), method = 'bilinear',
+#' Calculation of effective surveyed area
+#'
+#' This function calculate the effective surveyed area based on viewshed analysis.
+#' A valid GRASS GIS session must be initiated before.
+#'
+#' @param elev \linkS4class{RasterLayer} containing elevation values
+#' @param pts \linkS4class{sf} containing the points from which the effective surveyed area is estimated.
+#' @param maxdist viewshed distance to analysie. Default: 1000 m
+#' @param path.save path to store files. Default: tempdir()
+#' @param path.temp path to store tempory files. Default: tempdir()
+#' @param method method for extracting elevation values for points. Default: 'bilinear'. Use 'simple' for neares neighbor.
+#' @param cores number of cores used for parallel processing. Default: 1 (sequentiel).
+#' @param memory memory used in viewshed computation. GRASS GIS r.viewshed. Default: 4096.
+#' @param NAflag replace value for NA (NULL data). Default: -99999.
+#' @param return.geom If TRUE geometry is returned by functtion. Default: TRUE.
+#' @param quiet do not show comments and state. Default: TRUE
+#' @param show.output.on.console show GRASS GIS console output. Default: FALSE
+#'
+#' @return
+#' list of \linkS4class{RasterLayer} of viewshed parameters
+#'
+#'
+#' @note
+#' \itemize{
+#'   \item function is taken from Bornaetxea, T., Rossi, M., Marchesini, I., & Alvioli, M. (2018). Effective surveyed area and its role in statistical landslide susceptibility assessments. Natural Hazards and Earth System Sciences, 18(9), 2455-2469.
+#' }
+#'
+#'
+#' @keywords effective surveyed area, GRASS GIS, viewshed
+#'
+#'
+#' @export
+effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.temp = tempdir(), method = 'bilinear', cores = 1,
                         memory = 4096, NAflag = -99999, return.geom = TRUE, quiet = TRUE, show.output.on.console = FALSE)
 {
 
@@ -143,7 +123,7 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), method
 
   ## ... creating some empty (0) raster layers
   if(!quiet) cat("... create empty rasters \n")
-  xxtemp <- raster::raster(ext = extent(elev), crs = crs(elev), res = res(elev), vals = 0)
+  xxtemp <- raster::raster(ext = raster::extent(elev), crs = raster::crs(elev), res = raster::res(elev), vals = 0)
   # xxtemp2 <- raster::raster(ext = extent(elev), crs = crs(elev), res = res(elev), vals = 0)
   # xxtemp3 <- raster::raster(ext = extent(elev), crs = crs(elev), res = res(elev), vals = 0)
   # xxtemp4 <- raster::raster(ext = extent(elev), crs = crs(elev), res = res(elev), vals = 0)
@@ -151,9 +131,11 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), method
 
   if(!quiet) cat("... START CALCULATION \n")
   # STARTING LOOP ----------------------------------------
-  results <- lapply(X = 1:nrow(pts), FUN = function(i, pts, pts.coord, pts.elev, maxdist, dim.max, show.output.on.console, quiet, memory)
+  results <- lapply(X = 1:nrow(pts), FUN = function(i, pts, pts.coord, pts.elev, maxdist, dim.max, show.output.on.console, quiet, path.temp, memory)
   # for(i in 1:nrow(pts))
   {
+    # browser()
+
     if(!quiet) cat("... ... running point: ", i, " of ", nrow(pts), " points\n")
 
     coords.i <- pts.coord[i,]
@@ -162,7 +144,8 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), method
     if(is.na(obselev.i))
     {
       warning("Point ", i, " skipped due to NA in elevation!\n")
-      next
+      # next
+      return(NULL)
     }
 
     bbox.i <- (sf::st_bbox(obj = pts[i,]) + c(-(maxdist+dim.max), -(maxdist+dim.max), (maxdist+dim.max), (maxdist+dim.max))) %>%
@@ -237,13 +220,13 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), method
 
     ## write out data
     # print(parseGRASS("r.out.gdal"))
-    path.angle <- file.path(tempdir(), paste0("tmp_angle_", i, ".tif"))
+    path.angle <- file.path(path.temp, paste0("tmp_angle_", i, ".tif"))
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
       input = "angle", output = path.angle))
 
 
     # print(parseGRASS("r.out.gdal"))
-    path.dist <- file.path(tempdir(), paste0("tmp_dist_", i, ".tif"))
+    path.dist <- file.path(path.temp, paste0("tmp_dist_", i, ".tif"))
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
       input = "dist_rescaled", output = path.dist))
 
@@ -293,7 +276,10 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), method
     return(list(angle = r.angle, dist = r.dist))
 
   }, pts = pts, pts.coord = pts.coord, pts.elev = pts.elev, maxdist = maxdist, dim.max = dim.max,
-     show.output.on.console = show.output.on.console, quiet = quiet, memory = memory) # end of loop
+     show.output.on.console = show.output.on.console, quiet = quiet, memory = memory, path.temp = path.temp) # end of loop
+
+  ## ... remove possible NULLS
+  results <- results[!vapply(results, is.null, logical(1))]
 
 
   ## .... stack data
@@ -308,22 +294,52 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), method
   stack.dist <- raster::stack(x = results.dist)
 
 
-
   ## CALCULATE EFFECTIVE SURVEYED AREA -----------------------------
   ## updating temp files
   if(!quiet) cat("... calculate effective surveyed area \n")
-  # updating the output layer of the best angle of view among all the points in the path
-  xxtemp <- raster::calc(x = stack.angle, max, na.rm = TRUE)
 
-  # updating the output layer of the number of points from which a cell is visible
-  xxtemp2 <- raster::calc(x = stack.angle, fun = function(x){length(which(x > 0))})
+  if(cores > 1)
+  {
+    if(!quiet) cat("... ... using parallel mode \n")
 
-  # updating the output layer of the category of the point who has the higher angles with the considered cell
-  xxtemp3 <- raster::calc(x = stack.angle, fun = function(x){ifelse(length(unique(x)) == 1 && x == 0, 0, which.max(x)-1)})
+    # raster::beginCluster(n = cores)
+    cl <- parallel::makeCluster(cores)
 
-  # updating the output layer of the rescaled distance
-  xxtemp4 <- suppressWarnings(raster::calc(x = stack.dist, fun = min, na.rm = TRUE))
+    # updating the output layer of the best angle of view among all the points in the path
+    xxtemp <- raster::clusterR(cl = cl, x = stack.angle, fun = calc, args = list(max, na.rm = TRUE),
+                               filename = file.path(path.temp, "xxtemp.tif"), overwrite = TRUE, NAflag = NAflag)
 
+    # updating the output layer of the number of points from which a cell is visible
+    xxtemp2 <- raster::clusterR(cl = cl, x = stack.angle, fun = calc, args = list(function(x){length(which(x > 0))}),
+                                filename = file.path(path.temp, "xxtemp.tif"), overwrite = TRUE, NAflag = NAflag)
+
+    # updating the output layer of the category of the point who has the higher angles with the considered cell
+    xxtemp3 <- raster::clusterR(cl = cl, x = stack.angle, fun = calc, args = list(function(x){ifelse(length(unique(x)) == 1 && x == 0, 0, which.max(x)-1)}),
+                                filename = file.path(path.temp, "xxtemp.tif"), overwrite = TRUE, NAflag = NAflag)
+
+    # updating the output layer of the rescaled distance
+    xxtemp4 <- raster::clusterR(cl = cl, x = stack.dist, fun = calc, args = list(min, na.rm = TRUE),
+                                filename = file.path(path.temp, "xxtemp.tif"), overwrite = TRUE, NAflag = NAflag)
+
+
+    parallel::stopCluster(cl)
+
+  } else {
+
+    if(!quiet) cat("... ... using sequential mode \n")
+
+    # updating the output layer of the best angle of view among all the points in the path
+    xxtemp <- raster::calc(x = stack.angle, max, na.rm = TRUE)
+
+    # updating the output layer of the number of points from which a cell is visible
+    xxtemp2 <- raster::calc(x = stack.angle, fun = function(x){length(which(x > 0))})
+
+    # updating the output layer of the category of the point who has the higher angles with the considered cell
+    xxtemp3 <- raster::calc(x = stack.angle, fun = function(x){ifelse(length(unique(x)) == 1 && x == 0, 0, which.max(x)-1)})
+
+    # updating the output layer of the rescaled distance
+    xxtemp4 <- suppressWarnings(raster::calc(x = stack.dist, fun = min, na.rm = TRUE))
+  }
 
   # set 0 to NA
   xxtemp[xxtemp == 0] <- NA
@@ -352,118 +368,3 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), method
   }
 
 } # end of function effSurvArea
-
-
-
-
-# TESTING FUNCTION -------------------------------
-debug(effSurvArea)
-undebug(effSurvArea)
-
-# ONE POINT
-path.test1 <- file.path(path.test, "Test1")
-
-result.pnt.500 <- effSurvArea(elev = elev, pts = pnt.1_2, maxdist = 500, path.save = path.test1, quiet = FALSE, show.output.on.console = TRUE)
-plot(result.pnt.500$distance)
-
-result.pnt.1000 <- effSurvArea(elev = elev, pts = pnt.1_2, maxdist = 1200, path.save = path.test1, quiet = FALSE, show.output.on.console = TRUE)
-plot(result.pnt.1000$distance)
-plot(result.pnt.1000$viewangles)
-plot(result.pnt.1000$pointofview)
-plot(result.pnt.1000$numberofviews)
-
-
-# creating the output layer
-# rgrass7::execGRASS("r.null", flags = c("quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   map = "xxtemp_out", setnull = "0"))
-#
-# rgrass7::execGRASS("r.null", flags = c("quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   map = "xxtemp2_out", setnull = "0"))
-#
-# rgrass7::execGRASS("r.null", flags = c("quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   map = "xxtemp3_out", setnull = "0"))
-#
-# rgrass7::execGRASS("r.null", flags = c("quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   map = "xxtemp4_out", setnull = "0"))
-
-
-# print(parseGRASS("g.copy"))
-# rgrass7::execGRASS("g.copy", flags = c("quiet", "overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   raster = paste0("xxtemp_out,", pref,"_viewangles")))
-#
-# rgrass7::execGRASS("g.copy", flags = c("quiet", "overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   raster = paste0("xxtemp2_out,", pref,"_numberofviews")))
-#
-# rgrass7::execGRASS("g.copy", flags = c("quiet", "overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   raster = paste0("xxtemp3_out,", pref,"_pointofviews")))
-#
-# rgrass7::execGRASS("g.copy", flags = c("quiet", "overwrite"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   raster = paste0("xxtemp4_out,", pref,"_distance_rescaled")))
-
-
-
-# path.viewangles <- "d:/Users/qo23hel/Desktop/Temp/GRASS TOOL/ESA_viewangles.tif"
-# path.numberofviews <- "d:/Users/qo23hel/Desktop/Temp/GRASS TOOL/ESA_numberofviews.tif"
-# path.pointofview <- "d:/Users/qo23hel/Desktop/Temp/GRASS TOOL/ESA_pointofview.tif"
-# path.distance <-  "d:/Users/qo23hel/Desktop/Temp/GRASS TOOL/ESA_distance.tif"
-#
-# path.viewangles <- "D:/Users/rAVer/Desktop/GRASS TOOL/ESA_viewangles.tif"
-# path.numberofviews <- "D:/Users/rAVer/Desktop/GRASS TOOL/ESA_numberofviews.tif"
-# path.pointofview <- "D:/Users/rAVer/Desktop/GRASS TOOL/ESA_pointofview.tif"
-# path.distance <-  "D:/Users/rAVer/Desktop/GRASS TOOL/ESA_distance.tif"
-#
-# # print(parseGRASS("r.out.gdal"))
-# rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   input = paste0(pref, "_viewangles"), output = path.viewangles))
-#
-# rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   input = paste0(pref, "_numberofviews"), output = path.numberofviews))
-#
-# rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   input = paste0(pref, "_pointofviews"), output = path.pointofview))
-#
-# rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-#   input = paste0(pref, "_distance_rescaled"), output = path.distance))
-
-
-# write data
-#evaluation of the azimuth layer
-# grass.mapcalc("azimuth = (450-aspect) - int( (450-aspect) / 360) * 360", overwrite=True, quiet=True)
-# #evaluation of the layer of the vertical component of the versor perpendicular to the terrain slope
-# grass.mapcalc("c_dem = cos(slope)", overwrite=True, quiet=True)
-# #evaluation of the layer of the north component of the versor perpendicular to the terrain slope
-# grass.mapcalc("b_dem = sin(slope)*cos(azimuth)", overwrite=True, quiet=True)
-# #evaluation of the layer of the east component of the versor perpendicular to the terrain slope
-# grass.mapcalc("a_dem = sin(slope)*sin(azimuth)", overwrite=True, quiet=True)
-
-# r.aspect <- raster::raster(path.aspect)
-# r.slope <- raster::raster(path.slope) %>%
-#            raster::calc(x =., fun = function(x){x*pi/180})
-#
-# r.azimuth <- raster::calc(x = r.aspect, fun = function(x){(450-x) - as.integer((450-x)/360)* 360}) %>% # as.integer
-#              raster::calc(x =., fun = function(x){x*pi/180})
-#
-# r.c_dem <-  raster::calc(x = r.slope, fun = function(x){cos(x)})
-# r.b_dem <-  raster::overlay(x = r.slope, y = r.azimuth, fun = function(x, y){sin(x) * cos(y)})
-# r.a_dem <-  raster::overlay(x = r.slope, y = r.azimuth, fun = function(x, y){sin(x) * sin(y)})
-#
-# raster::writeRaster(x = r.azimuth, filename = file.path(path.test, "azimuth.tif"), overwrite = TRUE, NAflag = -99999)
-# raster::writeRaster(x = r.c_dem, filename = file.path(path.test, "c_dem.tif"), overwrite = TRUE, NAflag = -99999)
-# raster::writeRaster(x = r.b_dem, filename = file.path(path.test, "b_dem.tif"), overwrite = TRUE, NAflag = -99999)
-# raster::writeRaster(x = r.a_dem, filename = file.path(path.test, "a_dem.tif"), overwrite = TRUE, NAflag = -99999)
-
-
-# https://sourceforge.net/p/saga-gis/discussion/790705/thread/338ba707/
-
-
-# if( y()>520210 && x()>569369.1, atan((569369.1-x())/(5202104-y())),
-#     if( y()<5202104 && x()>569369.1, 180+atan((569369.1-x())/(5202104-y())),
-#         if( y()<5202104 && x()<569369.1, 180+atan((569369.1-x())/(5202104-y())),
-#             if( y()>5202104 && x()<569369.1, 360+atan((569369.1-x())/(5202104-y()))))))
-
-
-# pow(pow(abs(y()-5202104),2)+pow(abs(x()-569369.1),2)+pow(abs( raster_pnt_1@PERMANENT   -(341.39+1.75)),2),0.5)
-
-
-
-

@@ -6,8 +6,8 @@
 \usage{
 hiPassThresh(x, scale.factor, threshold, path.output = NULL,
   do.sieve = TRUE, sieve.mode = "0", sieve.thresh = 4,
-  do.shrink.expand = TRUE, expand = 4, do.buf = FALSE, buf.size = 1,
-  do.use.temp.HPF = FALSE, do.use.temp.Thresh = FALSE,
+  do.shrink.expand = TRUE, expand = 4, do.buf = FALSE,
+  buf.size = 1, do.use.temp.HPF = FALSE, do.use.temp.Thresh = FALSE,
   path.save = tempdir(), NoData = -99999, env.rsaga = NULL,
   show.output.on.console = FALSE, quiet = TRUE, ...)
 }

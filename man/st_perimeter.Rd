@@ -4,7 +4,7 @@
 \alias{st_perimeter}
 \title{Calculate the perimeter of a polygon}
 \usage{
-st_perimeter(x)
+st_perimeter(x, ...)
 }
 \arguments{
 \item{x}{object of class sf}

@@ -4,16 +4,19 @@
 \alias{contrastFilterSegmentation}
 \title{Contrast-Filter-Segmentation}
 \usage{
-contrastFilterSegmentation(input.filter, input.segmentation = input.filter,
-  offset = 0.06, makeBrush.size = 25, makeBrush.shape = "disc",
-  NA.val.in = 0, clump.thresh = NULL, clump.directions = 4,
-  env.rsaga = RSAGA::rsaga.env(), CFR.buf = 1, output.path = tempdir(),
-  writeCFRaster = FALSE, writeRaster.NAflag = -99999, freeMemory = TRUE,
+contrastFilterSegmentation(input.filter,
+  input.segmentation = input.filter, offset = 0.06,
+  makeBrush.size = 25, makeBrush.shape = "disc", NA.val.in = 0,
+  clump.thresh = NULL, clump.directions = 4,
+  env.rsaga = RSAGA::rsaga.env(), CFR.buf = 1,
+  output.path = tempdir(), writeCFRaster = FALSE,
+  writeRaster.NAflag = -99999, freeMemory = TRUE,
   show.output.on.console = FALSE, quiet = TRUE, morph.Closing = TRUE,
   closing.size = 3, closing.shape = "box",
   Grass.Segmentation.Threshold = 0.24, Grass.Segmentation.Minsize = 1,
-  Grass.Segmentation.Memory = 1024, Segments.Poly = file.path(tempdir(),
-  "outSegPoly.shp"), Segments.Grid = file.path(tempdir(), "outSegGrid.sgrd"),
+  Grass.Segmentation.Memory = 1024,
+  Segments.Poly = file.path(tempdir(), "outSegPoly.shp"),
+  Segments.Grid = file.path(tempdir(), "outSegGrid.sgrd"),
   defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"),
   load.output = FALSE, fill.holes = FALSE, ...)
 }
@@ -68,6 +71,9 @@ contrastFilterSegmentation(input.filter, input.segmentation = input.filter,
 }
 \value{
 \linkS4class{SpatialPolygonsDataFrame} containing the segments/objects
+}
+\description{
+Contrast-Filter-Segmentation
 }
 \note{
 \itemize{

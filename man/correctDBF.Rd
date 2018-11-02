@@ -4,7 +4,8 @@
 \alias{correctDBF}
 \title{Correct .dbf of file}
 \usage{
-correctDBF(x, end.n = length(colnames(d$dbf)), adjust.n = 0, new.colnames)
+correctDBF(x, end.n = length(colnames(d$dbf)), adjust.n = 0,
+  new.colnames)
 }
 \arguments{
 \item{x}{full path to .dbf-file, but without extension}

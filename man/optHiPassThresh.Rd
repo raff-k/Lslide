@@ -5,8 +5,8 @@
 \title{Find optimal hyper-parameters for function highPassThresholding}
 \usage{
 optHiPassThresh(x, inventory, range.scale.factor, range.threshold,
-  path.runfile = NULL, env.rsaga, path.save = tempdir(), NoData = -99999,
-  ..., cores = 1, quiet = TRUE)
+  path.runfile = NULL, env.rsaga, path.save = tempdir(),
+  NoData = -99999, ..., cores = 1, quiet = TRUE)
 }
 \arguments{
 \item{x}{raster object or input path of file}

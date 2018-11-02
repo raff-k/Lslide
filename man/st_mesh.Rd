@@ -4,8 +4,9 @@
 \alias{st_mesh}
 \title{Calculate the effective mesh size}
 \usage{
-st_mesh(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10000,
-  do.preProcessing = TRUE, return.geom = FALSE, quiet = TRUE)
+st_mesh(geom.frag, geom.boundary = NULL, total.area = NULL,
+  conv = 10000, do.preProcessing = TRUE, return.geom = FALSE,
+  quiet = TRUE)
 }
 \arguments{
 \item{geom.frag}{polygon of class sf representing the fragmentation geometry}

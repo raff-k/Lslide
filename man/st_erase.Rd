@@ -4,7 +4,7 @@
 \alias{st_erase}
 \title{Erase one geometry from another}
 \usage{
-st_erase(x, y)
+st_erase(x, y, precision = 0, do.subset = TRUE)
 }
 \arguments{
 \item{x}{object of class sf}

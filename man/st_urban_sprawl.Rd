@@ -5,8 +5,10 @@
 \title{Calculate urban sprawl}
 \usage{
 st_urban_sprawl(geom.urban, geom.boundary = NULL, dist = c(100, 100),
-  extent = NULL, force.extent = FALSE, do.preProcessing = TRUE,
-  return.geom = FALSE, quiet = TRUE)
+  trans = function(x, trans.k) {     x - 1 + 1/(x + trans.k) },
+  trans.k = 1, tol = 0.1, extent = NULL, force.extent = FALSE,
+  precision = 0, do.preProcessing = TRUE, env.rsaga = NULL,
+  use.saga = FALSE, return.geom = FALSE, quiet = TRUE)
 }
 \arguments{
 \item{geom.urban}{polygon of class sf representing the fragmentation geometry}
@@ -15,18 +17,30 @@ st_urban_sprawl(geom.urban, geom.boundary = NULL, dist = c(100, 100),
 
 \item{dist}{vector containing distance between lines in x and y direction. Default: c(100, 100) [m]}
 
+\item{trans}{transformation function {x-1+1/(x+trans.k)} with x as free line and trans.k a constant}
+
+\item{trans.k}{constant in km for transformation function trans. Default: 1}
+
+\item{tol}{tolerance value for intersection with erased lines. Buffering procedure is used.Default: 0.1 [m]}
+
 \item{extent}{Numeric value representing extent for area. Format of vector: c(xmin, xmax, ymax, ymin) . Default: NULL}
 
 \item{force.extent}{If TRUE extent is used instead of geom.boundary (if both are present). Default: FALSE}
 
+\item{precision}{precision for process. See sf::st_set_precision(). Default: 0}
+
 \item{do.preProcessing}{If TRUE (default), the input of geom.frag is, first, dissolved to single part feature, and second, splitted to multi-parts. By this step it is assured, that polygon connected to each other are summarized}
+
+\item{env.rsaga}{environment of SAGA GIS. If st_erase fails then SAGA GIS erase is used. Default: NULL, but in function call if not set: RSAGA::rsaga.env()}
+
+\item{use.saga}{use SAGA GIS for erase process. Default: FALSE}
 
 \item{return.geom}{If set to TRUE, intermediate geometries are returned as well. Default: FALSE}
 
 \item{quiet}{If set to FALSE, actual state is printed to console. Default: TRUE.}
 }
 \value{
-....
+strong urban sprawl: 40-50%, less urban sprawl: 80-90%
 }
 \description{
 This function calculates the urban sprawl of urban area.

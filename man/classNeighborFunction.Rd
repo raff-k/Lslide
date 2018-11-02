@@ -5,11 +5,11 @@
 \title{Calculation of relations from a class to its neighbor objects}
 \usage{
 classNeighborFunction(spdf, nb, class.var, var, calc.nb.flow = FALSE,
-  col.flow = NULL, bb.intersection = "rgeos", class.as.neighbors = FALSE,
-  bb = NULL, return.bb.flow = FALSE, scale.factor.flow = c(1, 1),
-  centroid.flow = TRUE, set.centroid.flow = "inverse",
-  k.centroid.flow = 2, k.flow = 2, scale.side.flow = "small",
-  quiet = TRUE)
+  col.flow = NULL, bb.intersection = "rgeos",
+  class.as.neighbors = FALSE, bb = NULL, return.bb.flow = FALSE,
+  scale.factor.flow = c(1, 1), centroid.flow = TRUE,
+  set.centroid.flow = "inverse", k.centroid.flow = 2, k.flow = 2,
+  scale.side.flow = "small", quiet = TRUE)
 }
 \arguments{
 \item{spdf}{\linkS4class{SpatialPolygonsDataFrame}, or full path of a shapefile}

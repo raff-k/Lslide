@@ -16,10 +16,11 @@ par.Objective.Function(Tool, Scale.Input.Grid,
   "Objective.Function.Count.Grid.sgrd"),
   Objective.Function.MoransI = paste0(tmp.path,
   "Objective.Function.MoransI.txt"), Quantile = 0, Scales,
-  Grass.Objective.Function.Method = "Threshold", Segments.Poly, Segments.Grid,
-  Grass.Segmentation.Minsize = NA, Grass.Segmentation.Threshold = NA,
-  Seed.Method = "", env = RSAGA::rsaga.env(),
-  show.output.on.console = FALSE, quiet = TRUE, ncores = 1, ...)
+  Grass.Objective.Function.Method = "Threshold", Segments.Poly,
+  Segments.Grid, Grass.Segmentation.Minsize = NA,
+  Grass.Segmentation.Threshold = NA, Seed.Method = "",
+  env = RSAGA::rsaga.env(), show.output.on.console = FALSE,
+  quiet = TRUE, ncores = 1, ...)
 }
 \arguments{
 \item{Tool}{open-source software to compute segmentation analysis. GRASS or SAGA}

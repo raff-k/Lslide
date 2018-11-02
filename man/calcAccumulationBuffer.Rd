@@ -4,9 +4,10 @@
 \alias{calcAccumulationBuffer}
 \title{Buffering of flow accumulations using thresholds}
 \usage{
-calcAccumulationBuffer(in.grid, out.grid, out.shp = NULL, return.sf = FALSE,
-  t, buf.dist, working.path = NULL, keep.intermediate = FALSE,
-  noData = -99999, show.output.on.console = FALSE, quiet = TRUE)
+calcAccumulationBuffer(in.grid, out.grid, out.shp = NULL,
+  return.sf = FALSE, t, buf.dist, working.path = NULL,
+  keep.intermediate = FALSE, noData = -99999,
+  show.output.on.console = FALSE, quiet = TRUE)
 }
 \arguments{
 \item{in.grid}{path of input grid (flow accumulation)}

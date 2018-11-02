@@ -5,7 +5,8 @@
 \title{Growing of neighbors}
 \usage{
 neighborGrowing(spdf, nb, ID.start = NULL, ID.class = NULL,
-  return.input = TRUE, return.gUnaryUnionNeighbors = TRUE, quiet = TRUE)
+  return.input = TRUE, return.gUnaryUnionNeighbors = TRUE,
+  quiet = TRUE)
 }
 \arguments{
 \item{spdf}{\linkS4class{SpatialPolygonsDataFrame}, or full path of a shapefile}

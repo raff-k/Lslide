@@ -9,10 +9,11 @@ hiPassSegmentation(input.filter, input.segmentation = input.filter,
   env.rsaga = RSAGA::rsaga.env(), writeRaster.NAflag = -99999,
   show.output.on.console = FALSE, quiet = TRUE,
   Grass.Segmentation.Threshold = 0.24, Grass.Segmentation.Minsize = 1,
-  Grass.Segmentation.Memory = 1024, Segments.Poly = file.path(tempdir(),
-  "outSegPoly.shp"), Segments.Grid = file.path(tempdir(), "outSegGrid.sgrd"),
-  load.output = FALSE, fill.holes = FALSE, estimateScaleParameter = FALSE,
-  ...)
+  Grass.Segmentation.Memory = 1024,
+  Segments.Poly = file.path(tempdir(), "outSegPoly.shp"),
+  Segments.Grid = file.path(tempdir(), "outSegGrid.sgrd"),
+  load.output = FALSE, fill.holes = FALSE,
+  estimateScaleParameter = FALSE, ...)
 }
 \arguments{
 \item{input.filter}{\linkS4class{RasterLayer} on which the filtering is applied}
@@ -45,6 +46,9 @@ hiPassSegmentation(input.filter, input.segmentation = input.filter,
 }
 \value{
 \linkS4class{SpatialPolygonsDataFrame} containing the segments/objects
+}
+\description{
+Contrast-Filter-Segmentation
 }
 \keyword{GIS}
 \keyword{GIS,}

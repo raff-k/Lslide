@@ -6,8 +6,8 @@
 \usage{
 textureFlow(grass.texture.flowDir, grass.texture.input,
   saga.texture.shape = NULL, saga.texture.statistic = NULL,
-  grass.texture.window = 3, quiet = TRUE, show.output.on.console = FALSE,
-  grass.texture.distance = 1,
+  grass.texture.window = 3, quiet = TRUE,
+  show.output.on.console = FALSE, grass.texture.distance = 1,
   grass.texture.method = "contrast,corr,var,sa,entr",
   grass.texture.name = c("_Contr_", "_Corr_", "_Var_", "_SA_", "_Entr_"),
   grass.categories.rules = "rules_texture", grass.texture.save = FALSE,

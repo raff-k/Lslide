@@ -5,11 +5,13 @@
 \title{Get rain event of a landslide}
 \usage{
 getRainEventData(x, dates = NULL, timesteps = NULL,
-  date.of.failure = NULL, sub.RainEvent = TRUE, all.RainEvent = FALSE,
-  cumu.RainFall = NULL, return.DataFrame = FALSE, S1.rainThresh = 0.2,
-  S3.rainThresh = 1, S1.rainOffLength = c(3, 6), S2.rainOffLength = c(6,
-  12), S4.rainOffLength = c(48, 96), RD = NULL, MAP = NULL,
-  RDN = MAP/RD, index.month.warm.season = c(4, 10), force.limit = NULL)
+  date.of.failure = NULL, sub.RainEvent = TRUE,
+  all.RainEvent = FALSE, cumu.RainFall = NULL,
+  return.DataFrame = FALSE, S1.rainThresh = 0.2, S3.rainThresh = 1,
+  S1.rainOffLength = c(3, 6), S2.rainOffLength = c(6, 12),
+  S4.rainOffLength = c(48, 96), RD = NULL, MAP = NULL,
+  RDN = MAP/RD, index.month.warm.season = c(4, 10),
+  force.limit = NULL)
 }
 \arguments{
 \item{x}{vector containing precipitation}

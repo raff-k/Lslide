@@ -4,8 +4,8 @@
 \alias{genRandomPntsByGrd}
 \title{Generate random points based on distance constraints}
 \usage{
-genRandomPntsByGrd(x, r, field, env.grass, do.PointsOnSurface = TRUE, dist,
-  save.path = NULL, quiet = TRUE, seed = 12345)
+genRandomPntsByGrd(x, r, field, env.grass, do.PointsOnSurface = TRUE,
+  dist, save.path = NULL, quiet = TRUE, seed = 12345)
 }
 \arguments{
 \item{x}{object of class sf}

@@ -4,8 +4,9 @@
 \alias{st_integration_index}
 \title{Calculate integration index}
 \usage{
-st_integration_index(geom.old, geom.new, geom.boundary = NULL, tol = 0.1,
-  ignr.overlap = FALSE, return.geom = FALSE, quiet = FALSE)
+st_integration_index(geom.old, geom.new, geom.boundary = NULL,
+  tol = 0.1, precision = 0, ignr.overlap = FALSE, env.rsaga = NULL,
+  use.saga = FALSE, return.geom = FALSE, quiet = FALSE)
 }
 \arguments{
 \item{geom.old}{object of class sf representing a land use class of a previous time step}
@@ -14,7 +15,13 @@ st_integration_index(geom.old, geom.new, geom.boundary = NULL, tol = 0.1,
 
 \item{geom.boundary}{polygon of class sf representing subregions, e.g. administrative boundaries}
 
-\item{tol}{tolerance value for overlapping area1 m square}
+\item{tol}{tolerance value for overlapping area m square}
+
+\item{precision}{precision for process. See sf::st_set_precision(). Default: 0}
+
+\item{env.rsaga}{environment of SAGA GIS. If st_erase fails then SAGA GIS erase is used. Default: NULL, but in function call if not set: RSAGA::rsaga.env()}
+
+\item{use.saga}{use SAGA GIS for erase process. Default: FALSE}
 
 \item{return.geom}{If set to TRUE, intermediate geometries are returned as well. Default: FALSE}
 

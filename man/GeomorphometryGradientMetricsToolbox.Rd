@@ -4,12 +4,13 @@
 \alias{GeomorphometryGradientMetricsToolbox}
 \title{Geomorphometry & Gradient Metrics Toolbox}
 \usage{
-GeomorphometryGradientMetricsToolbox(elevation, slope = NULL, aspect = NULL,
-  tool = c("Linear Aspect", "Landfrom", "Mean Slope", "SEI", "RI"),
-  params = params, zScale = "1.0", output.path = tempdir(),
-  use.link2GI = TRUE, defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2",
-  "OSGeo4W64"), initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2",
-  mask = NULL, mask.by.thres = NULL, NODATA = -99999,
+GeomorphometryGradientMetricsToolbox(elevation, slope = NULL,
+  aspect = NULL, tool = c("Linear Aspect", "Landfrom", "Mean Slope",
+  "SEI", "RI"), params = params, zScale = "1.0",
+  output.path = tempdir(), use.link2GI = TRUE,
+  defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"),
+  initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2", mask = NULL,
+  mask.by.thres = NULL, NODATA = -99999,
   load.ElevationIntoGRASS = TRUE, quiet = TRUE)
 }
 \arguments{

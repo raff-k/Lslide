@@ -4,9 +4,9 @@
 \alias{getBoundingBox}
 \title{Rotated and scaled bounding box}
 \usage{
-getBoundingBox(spdf, col.name, scale.factor = 2, k = 2, projection = NA,
-  centroid = FALSE, set.centroid = "inverse", k.centroid = 2,
-  scale.side = "long", cores = 1, quiet = TRUE)
+getBoundingBox(spdf, col.name, scale.factor = 2, k = 2,
+  projection = NA, centroid = FALSE, set.centroid = "inverse",
+  k.centroid = 2, scale.side = "long", cores = 1, quiet = TRUE)
 }
 \arguments{
 \item{spdf}{SpatialPolygonsDataFrame. SPDF must contains a valid \emph{ID} field and a field containing direction angles}

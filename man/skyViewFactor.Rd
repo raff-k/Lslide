@@ -8,10 +8,10 @@ skyViewFactor(path.software, path.input, options_overwrite = 1,
   options_exaggeration_factor = 1, hillshading = c(0, 315, 35, 0),
   multiple_hillshading = c(0, 16), pca_hillshading = c(0, 3),
   slope_gradient = 0, simple_local_relief = c(0, 20),
-  sky_view_factor = c(1, 16, 10, 0, "low"), anisotropic_svf = c(0, "low",
-  315), positive_openness = 0, negative_openness = 0,
-  sky_illumination = c(0, "overcast", 250, 100), local_dominance = c(0, 10,
-  20), quiet = TRUE)
+  sky_view_factor = c(1, 16, 10, 0, "low"), anisotropic_svf = c(0,
+  "low", 315), positive_openness = 0, negative_openness = 0,
+  sky_illumination = c(0, "overcast", 250, 100), local_dominance = c(0,
+  10, 20), quiet = TRUE)
 }
 \arguments{
 \item{path.software}{path where software is located}

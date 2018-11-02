@@ -4,8 +4,9 @@
 \alias{neighborDirection}
 \title{Calculation of the direction of every object to its neighbors}
 \usage{
-neighborDirection(spdf, col.name, modus = "nb", tol = 360, spdf.bb = NULL,
-  sp.PoS = NULL, nb = NULL, bb = NULL, cores = 1, quiet = TRUE, ...)
+neighborDirection(spdf, col.name, modus = "nb", tol = 360,
+  spdf.bb = NULL, sp.PoS = NULL, nb = NULL, bb = NULL, cores = 1,
+  quiet = TRUE, ...)
 }
 \arguments{
 \item{spdf}{\linkS4class{SpatialPolygonsDataFrame}, or full path of a shapefile}

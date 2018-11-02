@@ -6,9 +6,10 @@
 \usage{
 initGRASSWin(x = NULL, osgeo4w.root = "C:\\\\OSGEO4W64",
   grass.version = "grass-7.2.2",
-  initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2", set.SysEnv = TRUE,
-  use.link2GI = FALSE, link2GI.defaultGrass = c("C:/OSGeo4W64",
-  "grass-7.2.2", "OSGeo4W64"), quiet = TRUE)
+  initGRASS.path = "C:/OSGeo4W64/apps/grass/grass-7.2.2",
+  set.SysEnv = TRUE, use.link2GI = FALSE,
+  link2GI.defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"),
+  quiet = TRUE)
 }
 \arguments{
 \item{x}{\linkS4class{RasterLayer}  for region and projection. Default: NULL}

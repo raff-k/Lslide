@@ -14,6 +14,9 @@ convR2GSM(r, NA.val.in = 0)
 \value{
 \linkS4class{data.table} containing object-based textural features
 }
+\description{
+Conversion of raster layer to gray-scale image
+}
 \note{
 \itemize{
   \item \emph{r} is stretched to gray-scale (0-255) during process by linear normalization
