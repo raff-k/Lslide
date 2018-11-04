@@ -293,8 +293,7 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
   # results <- results[!vapply(results, is.null, logical(1))]
 
 
-  ## .... stack data
-  if(!quiet) cat("... stack calculation results \n")
+  ## .... check data
   results.angle <- lapply(X = results, FUN = function(x) x$angle) %>%
     append(xxtemp, .)
 
@@ -311,24 +310,28 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
   if(!quiet) cat("... calculate effective surveyed area by mosaicing \n")
 
   # updating the output layer of the best angle of view among all the points in the path
+  if(!quiet) cat("... view angles \n")
   l.xxtemp <- results.angle
   l.xxtemp$fun <- max
   l.xxtemp$na.rm <- TRUE
   xxtemp <- do.call(what = raster::mosaic, args = l.xxtemp)
 
   # updating the output layer of the number of points from which a cell is visible
+  if(!quiet) cat("... number of views \n")
   l.xxtemp2 <- results.angle
   l.xxtemp2$fun <- function(x, na.rm){length(which(x > 0))}
   xxtemp2 <- do.call(what = raster::mosaic, args = l.xxtemp2)
 
 
   # updating the output layer of the category of the point who has the higher angles with the considered cell
+  if(!quiet) cat("... point of view \n")
   l.xxtemp3 <- results.angle
   l.xxtemp3$fun <- function(x, na.rm){ifelse(length(unique(x)) == 1 && x == 0, 0, which.max(x)-1)} # ... -1 because of temp raster
   xxtemp3 <- do.call(what = raster::mosaic, args = l.xxtemp3)
 
 
   # updating the output layer of the rescaled distance
+  if(!quiet) cat("... distance \n")
   l.xxtemp4 <- results.dist
   l.xxtemp4$fun <- min
   l.xxtemp4$na.rm <- TRUE
