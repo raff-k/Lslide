@@ -275,12 +275,14 @@ effSurvArea <- function(elev, pts, maxdist = 1000, do.extend = FALSE, path.save 
   l.xxtemp <- results.angle
   l.xxtemp$fun <- max
   l.xxtemp$na.rm <- TRUE
+  l.xxtemp$filename <- file.path(path.temp, "tmp_viewangles.tif")
   xxtemp <- do.call(what = raster::mosaic, args = l.xxtemp)
 
   # updating the output layer of the number of points from which a cell is visible
   if(!quiet) cat("... number of views \n")
   l.xxtemp2 <- results.angle
   l.xxtemp2$fun <- function(x, na.rm){length(which(x > 0))}
+  l.xxtemp2$filename <- file.path(path.temp, "tmp_numberofviews.tif")
   xxtemp2 <- do.call(what = raster::mosaic, args = l.xxtemp2)
 
 
@@ -288,6 +290,7 @@ effSurvArea <- function(elev, pts, maxdist = 1000, do.extend = FALSE, path.save 
   if(!quiet) cat("... point of view \n")
   l.xxtemp3 <- results.angle
   l.xxtemp3$fun <- function(x, na.rm){ifelse(length(which.max(x)) == 0 || max(x, na.rm = na.rm) == 0, NA, which.max(x))}
+  l.xxtemp3$filename <- file.path(path.temp, "tmp_pointofview.tif")
   xxtemp3 <- do.call(what = raster::mosaic, args = l.xxtemp3)
 
 
@@ -296,6 +299,7 @@ effSurvArea <- function(elev, pts, maxdist = 1000, do.extend = FALSE, path.save 
   l.xxtemp4 <- results.dist
   l.xxtemp4$fun <- min
   l.xxtemp4$na.rm <- TRUE
+  l.xxtemp4$filename <- file.path(path.temp, "tmp_distance.tif")
   xxtemp4 <- do.call(what = raster::mosaic, args = l.xxtemp4)
 
 
