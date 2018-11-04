@@ -119,9 +119,9 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
 
 
   ## ... creating some empty (0) raster layers
-  if(!quiet) cat("... create empty rasters \n")
-  xxtemp <- raster::raster(ext = raster::extent(elev), crs = raster::crs(elev), res = raster::res(elev), vals = 0)
-  xxtempNA <- raster::raster(ext = raster::extent(elev), crs = raster::crs(elev), res = raster::res(elev), vals = NA)
+  # if(!quiet) cat("... create empty rasters \n")
+  # xxtemp <- raster::raster(ext = raster::extent(elev), crs = raster::crs(elev), res = raster::res(elev), vals = 0)
+  # xxtempNA <- raster::raster(ext = raster::extent(elev), crs = raster::crs(elev), res = raster::res(elev), vals = NA)
 
 
   if(!quiet) cat("... START CALCULATION \n")
@@ -294,15 +294,15 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
 
 
   ## .... check data
-  results.angle <- lapply(X = results, FUN = function(x) x$angle) %>%
-    append(xxtemp, .)
+  results.angle <- lapply(X = results, FUN = function(x) x$angle) # %>%
+    # append(xxtemp, .)
 
   results.angle <- results.angle [!vapply(results.angle, is.null, logical(1))] # ... remove possible NULLS
 
 
 
-  results.dist <- lapply(X = results, FUN = function(x) x$dist)  %>%
-   append(xxtempNA, .)
+  results.dist <- lapply(X = results, FUN = function(x) x$dist)  # %>%
+   # append(xxtempNA, .)
   results.dist <- results.dist[!vapply(results.dist, is.null, logical(1))] # ... remove possible NULLS
 
 
@@ -326,7 +326,7 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
   # updating the output layer of the category of the point who has the higher angles with the considered cell
   if(!quiet) cat("... point of view \n")
   l.xxtemp3 <- results.angle
-  l.xxtemp3$fun <- function(x, na.rm){ifelse(length(unique(x)) == 1 && x == 0, 0, which.max(x)-1)} # ... -1 because of temp raster
+  l.xxtemp3$fun <- function(x, na.rm){ifelse(length(unique(x)) == 1 && x == 0, 0, which.max(x))}
   xxtemp3 <- do.call(what = raster::mosaic, args = l.xxtemp3)
 
 
@@ -342,6 +342,14 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
   xxtemp[xxtemp == 0] <- NA
   xxtemp2[xxtemp2 == 0] <- NA
   xxtemp3[xxtemp3 == 0] <- NA
+
+  if(do.extend)
+  {
+    xxtemp <- raster::extend(x = xxtemp, y = elev, value = NA)
+    xxtemp2 <- raster::extend(x = xxtem2, y = elev, value = NA)
+    xxtemp3 <- raster::extend(x = xxtemp3, y = elev, value = NA)
+    xxtemp4 <- raster::extend(x = xxtemp4, y = elev, value = NA)
+  }
 
 
   # save rasters
