@@ -310,83 +310,30 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
   ## CALCULATE EFFECTIVE SURVEYED AREA -----------------------------
   if(!quiet) cat("... calculate effective surveyed area by mosaicing \n")
 
-    # updating the output layer of the best angle of view among all the points in the path
-    l.xxtemp <- results.angle
-    l.xxtemp$fun <- max
-    l.xxtemp$na.rm <- TRUE
-    xxtemp <- do.call(what = raster::mosaic, args = l.xxtemp)
+  # updating the output layer of the best angle of view among all the points in the path
+  l.xxtemp <- results.angle
+  l.xxtemp$fun <- max
+  l.xxtemp$na.rm <- TRUE
+  xxtemp <- do.call(what = raster::mosaic, args = l.xxtemp)
 
-    # updating the output layer of the number of points from which a cell is visible
-    l.xxtemp2 <- results.angle
-    l.xxtemp2$fun <- function(x, na.rm){length(which(x > 0))}
-    xxtemp2 <- do.call(what = raster::mosaic, args = l.xxtemp2)
-
-
-    # updating the output layer of the category of the point who has the higher angles with the considered cell
-    l.xxtemp3 <- results.angle
-    l.xxtemp3$fun <- function(x, na.rm){ifelse(length(unique(x)) == 1 && x == 0, 0, which.max(x)-1)} # ... -1 because of temp raster
-    xxtemp3 <- do.call(what = raster::mosaic, args = l.xxtemp3)
+  # updating the output layer of the number of points from which a cell is visible
+  l.xxtemp2 <- results.angle
+  l.xxtemp2$fun <- function(x, na.rm){length(which(x > 0))}
+  xxtemp2 <- do.call(what = raster::mosaic, args = l.xxtemp2)
 
 
-    # updating the output layer of the rescaled distance
-    l.xxtemp4 <- results.dist
-    l.xxtemp4$fun <- min
-    l.xxtemp4$na.rm <- TRUE
-    xxtemp4 <- do.call(what = raster::mosaic, args = l.xxtemp4)
+  # updating the output layer of the category of the point who has the higher angles with the considered cell
+  l.xxtemp3 <- results.angle
+  l.xxtemp3$fun <- function(x, na.rm){ifelse(length(unique(x)) == 1 && x == 0, 0, which.max(x)-1)} # ... -1 because of temp raster
+  xxtemp3 <- do.call(what = raster::mosaic, args = l.xxtemp3)
 
 
+  # updating the output layer of the rescaled distance
+  l.xxtemp4 <- results.dist
+  l.xxtemp4$fun <- min
+  l.xxtemp4$na.rm <- TRUE
+  xxtemp4 <- do.call(what = raster::mosaic, args = l.xxtemp4)
 
-
-  # stack.angle <- raster::stack(x = results.angle)
-  # stack.dist <- raster::stack(x = results.dist)
-
-
-  ## CALCULATE EFFECTIVE SURVEYED AREA -----------------------------
-  ## updating temp files
-  # if(!quiet) cat("... calculate effective surveyed area \n")
-  #
-  # if(cores > 1)
-  # {
-  #   if(!quiet) cat("... ... using parallel mode \n")
-  #
-  #   # raster::beginCluster(n = cores)
-  #   cl <- parallel::makeCluster(cores)
-  #
-  #   # updating the output layer of the best angle of view among all the points in the path
-  #   xxtemp <- raster::clusterR(cl = cl, x = stack.angle, fun = calc, args = list(max, na.rm = TRUE),
-  #                              filename = file.path(path.temp, "xxtemp.tif"), overwrite = TRUE, NAflag = NAflag)
-  #
-  #   # updating the output layer of the number of points from which a cell is visible
-  #   xxtemp2 <- raster::clusterR(cl = cl, x = stack.angle, fun = calc, args = list(function(x){length(which(x > 0))}),
-  #                               filename = file.path(path.temp, "xxtemp.tif"), overwrite = TRUE, NAflag = NAflag)
-  #
-  #   # updating the output layer of the category of the point who has the higher angles with the considered cell
-  #   xxtemp3 <- raster::clusterR(cl = cl, x = stack.angle, fun = calc, args = list(function(x){ifelse(length(unique(x)) == 1 && x == 0, 0, which.max(x)-1)}),
-  #                               filename = file.path(path.temp, "xxtemp.tif"), overwrite = TRUE, NAflag = NAflag)
-  #
-  #   # updating the output layer of the rescaled distance
-  #   xxtemp4 <- raster::clusterR(cl = cl, x = stack.dist, fun = calc, args = list(min, na.rm = TRUE),
-  #                               filename = file.path(path.temp, "xxtemp.tif"), overwrite = TRUE, NAflag = NAflag)
-  #
-  #
-  #   parallel::stopCluster(cl)
-  #
-  # } else {
-  #
-  #   if(!quiet) cat("... ... using sequential mode \n")
-  #
-  #   # updating the output layer of the best angle of view among all the points in the path
-  #   xxtemp <- raster::calc(x = stack.angle, max, na.rm = TRUE)
-  #
-  #   # updating the output layer of the number of points from which a cell is visible
-  #   xxtemp2 <- raster::calc(x = stack.angle, fun = function(x){length(which(x > 0))})
-  #
-  #   # updating the output layer of the category of the point who has the higher angles with the considered cell
-  #   xxtemp3 <- raster::calc(x = stack.angle, fun = function(x){ifelse(length(unique(x)) == 1 && x == 0, 0, which.max(x)-1)})
-  #
-  #   # updating the output layer of the rescaled distance
-  #   xxtemp4 <- suppressWarnings(raster::calc(x = stack.dist, fun = min, na.rm = TRUE))
-  # }
 
   # set 0 to NA
   xxtemp[xxtemp == 0] <- NA
