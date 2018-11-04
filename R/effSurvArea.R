@@ -6,6 +6,7 @@
 #' @param elev \linkS4class{RasterLayer} containing elevation values
 #' @param pts \linkS4class{sf} containing the points from which the effective surveyed area is estimated.
 #' @param maxdist viewshed distance to analysie. Default: 1000 m
+#' @param do.extend extend output to extent of input elev. Default: FALSE
 #' @param path.save path to store files. Default: tempdir()
 #' @param path.temp path to store tempory files. Default: tempdir()
 #' @param method method for extracting elevation values for points. Default: 'bilinear'. Use 'simple' for neares neighbor.
@@ -29,7 +30,7 @@
 #'
 #'
 #' @export
-effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.temp = tempdir(), method = 'bilinear',
+effSurvArea <- function(elev, pts, maxdist = 1000, do.extend = FALSE, path.save = tempdir(), path.temp = tempdir(), method = 'bilinear',
                         memory = 4096, NAflag = -99999, return.geom = TRUE, quiet = TRUE, show.output.on.console = FALSE)
 {
 
@@ -40,7 +41,8 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
   dim.x <- raster::xres(elev)
   dim.y <- raster::yres(elev)
   dim.max <- max(c(dim.x, dim.y), na.rm = TRUE)
-  r.extent <- raster::extent(elev) %>% matrix(.) %>% c(.) %>% .[c(1, 3, 2, 4)] # order: xmin ymin xmax ymax
+  extent.elev <- raster::extent(elev)
+  r.extent <- extent.elev %>% matrix(.) %>% c(.) %>% .[c(1, 3, 2, 4)] # order: xmin ymin xmax ymax
 
   # re-arrange maxdist based on resolution for region, maxdist is calculated from cell center
   maxdist.x <- ceiling(maxdist/dim.x) * dim.x + (dim.x/2)
@@ -78,12 +80,6 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
   rgrass7::execGRASS("r.slope.aspect", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
     elevation = "dem",  slope = "slope", aspect = "aspect"))
 
-  # # print(parseGRASS("r.out.gdal"))
-  # rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-  #   input = "aspect", output = path.aspect))
-  #
-  # rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-  #   input = "slope", output = path.slope))
 
   # Process points ----------------------------------------
   if(!quiet) cat("... extract point elevation using method ", method, "\n")
@@ -237,24 +233,6 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
       input = "dist_rescaled", output = path.dist))
 
-    ## THROW ERROR IN WINDOWS AND GRASS GIS 7.4.x
-    # # updating the output layer of the rescaled distance
-    # rgrass7::execGRASS("r.mapcalc", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-    #   expression = "xxtemp4_out = if(isnull(dist_rescaled),xxtemp4, if(xxtemp4 != 0,min(dist_rescaled,xxtemp4),dist_rescaled))"))
-    #
-    # # updating the output layer of the category of the point who has the higher angles with the considered cell
-    # rgrass7::execGRASS("r.mapcalc", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-    #   expression = paste0("xxtemp3_out = if(angle==0, xxtemp3, if(angle<xxtemp,xxtemp3,", i, ") ) ")))
-    #
-    # # updating the output layer of the number of points from which a cell is visible
-    # rgrass7::execGRASS("r.mapcalc", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-    #   expression = paste0("xxtemp2_out = if(angle==0,xxtemp2,xxtemp2+1)")))
-    #
-    # # updating the output layer of the best angle of view among all the points in the path
-    # rgrass7::execGRASS("r.mapcalc", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-    #   expression = paste0("xxtemp_out = max(xxtemp,angle)")))
-
-
     # coming back to the original working region
     rgrass7::execGRASS("g.region", flags = c("quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
       region = "saved_region"))
@@ -269,28 +247,11 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
     rgrass7::execGRASS("g.remove", flags = c("f", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
       type = "raster", name = c("angolo_vista", "view", "view90", "view_complete", "a_view", "b_view", "c_view", "angle", "dist_rescaled", "distance")))
 
-    # ## updating temp files
-    # # updating the output layer of the rescaled distance
-    # xxtemp4 <- raster::overlay(x = xxtemp4, y = r.dist, fun = function(x, y){ifelse(is.na(y), x,
-    #                                                                                 ifelse(x != 0, min(y, x, na.rm = TRUE), y))})
-    #
-    # # updating the output layer of the category of the point who has the higher angles with the considered cell
-    # xxtemp3 <- raster::overlay(x = xxtemp3, y = r.angle, fun = function(x, y){ifelse(y == 0, x,
-    #                                                                               ifelse(y < x, x, i))})
-    #
-    # # updating the output layer of the number of points from which a cell is visible
-    # xxtemp2 <- raster::overlay(x = xxtemp2, y = r.angle, fun = function(x, y){ifelse(y == 0, x, x + 1)})
-    #
-    # # updating the output layer of the best angle of view among all the points in the path
-    # xxtemp <- raster::overlay(x = xxtemp, y = r.angle, fun = function(x, y) {ifelse(x >= y, x, y)})
 
     return(list(angle = r.angle, dist = r.dist))
 
   }, pts = pts, pts.coord = pts.coord, pts.xy = pts.xy, pts.elev = pts.elev, maxdist = maxdist, maxdist.x = maxdist.x, maxdist.y = maxdist.y, dim.max = dim.max,
   show.output.on.console = show.output.on.console, quiet = quiet, memory = memory, path.temp = path.temp, r.extent = r.extent) # end of loop
-
-  ## ... remove possible NULLS
-  # results <- results[!vapply(results, is.null, logical(1))]
 
 
   ## .... check data
@@ -326,7 +287,7 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
   # updating the output layer of the category of the point who has the higher angles with the considered cell
   if(!quiet) cat("... point of view \n")
   l.xxtemp3 <- results.angle
-  l.xxtemp3$fun <- function(x, na.rm){ifelse(length(unique(x)) == 1 && x == 0, 0, which.max(x))}
+  l.xxtemp3$fun <- function(x, na.rm){ifelse(length(which.max(x)) == 0 || max(x, na.rm = na.rm) == 0, NA, which.max(x))}
   xxtemp3 <- do.call(what = raster::mosaic, args = l.xxtemp3)
 
 
@@ -345,10 +306,17 @@ effSurvArea <- function(elev, pts, maxdist = 1000, path.save = tempdir(), path.t
 
   if(do.extend)
   {
-    xxtemp <- raster::extend(x = xxtemp, y = elev, value = NA)
-    xxtemp2 <- raster::extend(x = xxtem2, y = elev, value = NA)
+    xxtemp <- raster::extend(x = xxtemp, y = extent.elev, value = NA)
+    if(!identical(raster::extent(xxtemp), extent.elev)){raster::extent(xxtemp) <- extent.elev}
+
+    xxtemp2 <- raster::extend(x = xxtemp2, y = elev, value = NA)
+    if(!identical(raster::extent(xxtemp2), extent.elev)){raster::extent(xxtemp2) <- extent.elev}
+
     xxtemp3 <- raster::extend(x = xxtemp3, y = elev, value = NA)
+    if(!identical(raster::extent(xxtemp3), extent.elev)){raster::extent(xxtemp3) <- extent.elev}
+
     xxtemp4 <- raster::extend(x = xxtemp4, y = elev, value = NA)
+    if(!identical(raster::extent(xxtemp4), extent.elev)){raster::extent(xxtemp4) <- extent.elev}
   }
 
 
