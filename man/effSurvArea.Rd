@@ -4,9 +4,10 @@
 \alias{effSurvArea}
 \title{Calculation of effective surveyed area}
 \usage{
-effSurvArea(elev, pts, maxdist = 1000, path.save = tempdir(),
-  method = "bilinear", memory = 4096, NAflag = -99999,
-  return.geom = TRUE, quiet = TRUE, show.output.on.console = FALSE)
+effSurvArea(elev, pts, maxdist = 1000, do.extend = FALSE,
+  path.save = tempdir(), path.temp = tempdir(), method = "bilinear",
+  memory = 4096, NAflag = -99999, return.geom = TRUE, quiet = TRUE,
+  show.output.on.console = FALSE)
 }
 \arguments{
 \item{elev}{\linkS4class{RasterLayer} containing elevation values}
@@ -15,7 +16,11 @@ effSurvArea(elev, pts, maxdist = 1000, path.save = tempdir(),
 
 \item{maxdist}{viewshed distance to analysie. Default: 1000 m}
 
+\item{do.extend}{extend output to extent of input elev. Default: FALSE}
+
 \item{path.save}{path to store files. Default: tempdir()}
+
+\item{path.temp}{path to store tempory files. Default: tempdir()}
 
 \item{method}{method for extracting elevation values for points. Default: 'bilinear'. Use 'simple' for neares neighbor.}
 

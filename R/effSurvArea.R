@@ -6,6 +6,7 @@
 #' @param elev \linkS4class{RasterLayer} containing elevation values
 #' @param pts \linkS4class{sf} containing the points from which the effective surveyed area is estimated.
 #' @param maxdist viewshed distance to analysie. Default: 1000 m
+#' @param ID vector containing names for temporary written data. Vector length must be the same as number of input points. Default: NULL.
 #' @param do.extend extend output to extent of input elev. Default: FALSE
 #' @param path.save path to store files. Default: tempdir()
 #' @param path.temp path to store tempory files. Default: tempdir()
@@ -30,12 +31,17 @@
 #'
 #'
 #' @export
-effSurvArea <- function(elev, pts, maxdist = 1000, do.extend = FALSE, path.save = tempdir(), path.temp = tempdir(), method = 'bilinear',
+effSurvArea <- function(elev, pts, ID = NULL, maxdist = 1000, do.extend = FALSE, path.save = tempdir(), path.temp = tempdir(), method = 'bilinear',
                         memory = 4096, NAflag = -99999, return.geom = TRUE, quiet = TRUE, show.output.on.console = FALSE)
 {
 
   # get start time of process
   process.time.start <- proc.time()
+
+  if(!is.null(ID) && length(ID) != nrow(pts))
+  {
+    stop("Length of ID must be the same as the number of input points!")
+  }
 
   # get dimension and extent of elevation input
   dim.x <- raster::xres(elev)
@@ -122,7 +128,7 @@ effSurvArea <- function(elev, pts, maxdist = 1000, do.extend = FALSE, path.save 
 
   if(!quiet) cat("... START CALCULATION \n")
   # STARTING LOOP ----------------------------------------
-  results <- lapply(X = 1:nrow(pts), FUN = function(i, pts, pts.coord, pts.xy, pts.elev, r.extent, maxdist, maxdist.x, maxdist.y, dim.max, show.output.on.console, quiet, path.temp, memory)
+  results <- lapply(X = 1:nrow(pts), FUN = function(i, pts, ID, pts.coord, pts.xy, pts.elev, r.extent, maxdist, maxdist.x, maxdist.y, dim.max, show.output.on.console, quiet, path.temp, memory)
     # for(i in 1:nrow(pts))
   {
    # browser()
@@ -223,13 +229,24 @@ effSurvArea <- function(elev, pts, maxdist = 1000, do.extend = FALSE, path.save 
 
     ## write out data
     # print(parseGRASS("r.out.gdal"))
-    path.angle <- file.path(path.temp, paste0("tmp_angle_", i, ".tif"))
+    if(!is.null(ID))
+    {
+      path.angle <- file.path(path.temp, paste0("tmp_angle_", ID[i], ".tif"))
+    } else {
+      path.angle <- file.path(path.temp, paste0("tmp_angle_", i, ".tif"))
+    }
+
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
       input = "angle", output = path.angle))
 
 
     # print(parseGRASS("r.out.gdal"))
-    path.dist <- file.path(path.temp, paste0("tmp_dist_", i, ".tif"))
+    if(!is.null(ID))
+    {
+      path.dist <- file.path(path.temp, paste0("tmp_dist_", ID[i], ".tif"))
+    } else {
+      path.dist <- file.path(path.temp, paste0("tmp_dist_", i, ".tif"))
+    }
     rgrass7::execGRASS("r.out.gdal", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
       input = "dist_rescaled", output = path.dist))
 
@@ -250,7 +267,7 @@ effSurvArea <- function(elev, pts, maxdist = 1000, do.extend = FALSE, path.save 
 
     return(list(angle = r.angle, dist = r.dist))
 
-  }, pts = pts, pts.coord = pts.coord, pts.xy = pts.xy, pts.elev = pts.elev, maxdist = maxdist, maxdist.x = maxdist.x, maxdist.y = maxdist.y, dim.max = dim.max,
+  }, pts = pts, pts.coord = pts.coord, ID = ID, pts.xy = pts.xy, pts.elev = pts.elev, maxdist = maxdist, maxdist.x = maxdist.x, maxdist.y = maxdist.y, dim.max = dim.max,
   show.output.on.console = show.output.on.console, quiet = quiet, memory = memory, path.temp = path.temp, r.extent = r.extent) # end of loop
 
 
@@ -258,7 +275,7 @@ effSurvArea <- function(elev, pts, maxdist = 1000, do.extend = FALSE, path.save 
   results.angle <- lapply(X = results, FUN = function(x) x$angle) # %>%
     # append(xxtemp, .)
 
-  results.angle <- results.angle [!vapply(results.angle, is.null, logical(1))] # ... remove possible NULLS
+  results.angle <- results.angle[!vapply(results.angle, is.null, logical(1))] # ... remove possible NULLS
 
 
 
