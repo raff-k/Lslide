@@ -37,8 +37,8 @@ Suggests:
           ggplot2,
           spdep
 Remotes:
-          Bioconductor-mirror/BiocInstaller,
-          Bioconductor-mirror/EBImage
+          bioc::BiocInstaller,
+          bioc::EBImage
 License: GPL (>= 2)
 Encoding: UTF-8
 RoxygenNote: 6.1.1
