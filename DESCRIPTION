@@ -13,6 +13,8 @@ Imports:
          dplyr (>= 0.7.4),
          link2GI (>= 0.1-0), 
          foreign (>= 0.8.67),
+         future (>= 1.11.0),
+         future.apply (>= 1.1.0),
          ggplot2 (>= 2.2.1),
          maptools (>= 0.8.40),
          igraph(>= 1.1.2), 

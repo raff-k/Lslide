@@ -14,6 +14,7 @@
 #' @param memory memory used in viewshed computation. GRASS GIS r.viewshed. Default: 4096.
 #' @param NAflag replace value for NA (NULL data). Default: -99999.
 #' @param return.geom If TRUE geometry is returned by functtion. Default: TRUE.
+#' @param cores number for cores for parallel-processing. If cores > 1 then for each observation in pts a mapset is created. Default: 1.
 #' @param quiet do not show comments and state. Default: TRUE
 #' @param show.output.on.console show GRASS GIS console output. Default: FALSE
 #'
@@ -32,7 +33,7 @@
 #'
 #' @export
 effSurvArea <- function(elev, pts, ID = NULL, maxdist = 1000, do.extend = FALSE, path.save = tempdir(), path.temp = tempdir(), method = 'bilinear',
-                        memory = 4096, NAflag = -99999, return.geom = TRUE, quiet = TRUE, show.output.on.console = FALSE)
+                        memory = 4096, NAflag = -99999, return.geom = TRUE, cores = 1, quiet = TRUE, show.output.on.console = FALSE)
 {
 
   # get start time of process
@@ -125,13 +126,51 @@ effSurvArea <- function(elev, pts, ID = NULL, maxdist = 1000, do.extend = FALSE,
   # xxtemp <- raster::raster(ext = raster::extent(elev), crs = raster::crs(elev), res = raster::res(elev), vals = 0)
   # xxtempNA <- raster::raster(ext = raster::extent(elev), crs = raster::crs(elev), res = raster::res(elev), vals = NA)
 
+  if(cores > 1)
+  {
+    cat("... init parallelisation mode \n")
+    future::plan(list(future::tweak(future::multiprocess, workers = cores)))
+
+    cat("... init mapsets for every point observation \n")
+    list.mapsets <- lapply(X = 1:nrow(pts), function(i){
+
+      mapset.i <- paste0("tmp_mapset_", i)
+
+      rgrass7::execGRASS("g.mapset", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+        mapset = mapset.i))
+
+      rgrass7::execGRASS("g.region", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+        region = region))
+
+      return(mapset.i)
+    }, region = "saved_region")
+
+    # change back to PERMANENT mapset
+    rgrass7::execGRASS("g.mapset", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+      mapset = "PERMANENT"))
+
+  } else {
+    future::plan(sequential)
+    list.mapsets <- NULL
+  }
+
+
 
   if(!quiet) cat("... START CALCULATION \n")
   # STARTING LOOP ----------------------------------------
-  results <- lapply(X = 1:nrow(pts), FUN = function(i, pts, ID, pts.coord, pts.xy, pts.elev, r.extent, maxdist, maxdist.x, maxdist.y, dim.max, show.output.on.console, quiet, path.temp, memory)
-    # for(i in 1:nrow(pts))
+  results <- future.apply::future_lapply(X = 1:nrow(pts), FUN = function(i, pts, ID, pts.coord, pts.xy, pts.elev, r.extent, maxdist, maxdist.x, maxdist.y, dim.max, show.output.on.console, quiet, path.temp, list.mapsets, memory)
   {
    # browser()
+
+    if(!is.null(list.mapsets))
+    {
+      mapsets.i <- list.mapsets[[i]]
+
+      # change to current mapset
+      rgrass7::execGRASS("g.mapset", flags = c("overwrite"), Sys_show.output.on.console = T, parameters = list(
+        mapset = mapset.i))
+    }
+
 
     ## remove files in GRASS GIS session
     # print(parseGRASS("g.remove"))
@@ -268,8 +307,10 @@ effSurvArea <- function(elev, pts, ID = NULL, maxdist = 1000, do.extend = FALSE,
     return(list(angle = r.angle, dist = r.dist))
 
   }, pts = pts, pts.coord = pts.coord, ID = ID, pts.xy = pts.xy, pts.elev = pts.elev, maxdist = maxdist, maxdist.x = maxdist.x, maxdist.y = maxdist.y, dim.max = dim.max,
-  show.output.on.console = show.output.on.console, quiet = quiet, memory = memory, path.temp = path.temp, r.extent = r.extent) # end of loop
+  show.output.on.console = show.output.on.console, quiet = quiet, memory = memory, path.temp = path.temp, r.extent = r.extent, list.mapsets = list.mapsets) # end of loop
 
+
+  if(cores > 1) future:::ClusterRegistry("stop")
 
   ## .... check data
   results.angle <- lapply(X = results, FUN = function(x) x$angle) # %>%
