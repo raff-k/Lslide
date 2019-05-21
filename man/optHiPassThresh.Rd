@@ -19,6 +19,8 @@ optHiPassThresh(x, inventory, range.scale.factor, range.threshold,
 
 \item{path.runfile}{full path for run file with .txt as ending. Default: NULL}
 
+\item{env.rsaga}{SAGA GIS environment}
+
 \item{NoData}{= -99999}
 
 \item{...}{see highPassThresholding()}

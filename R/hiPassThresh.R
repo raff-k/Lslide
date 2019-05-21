@@ -5,8 +5,8 @@
 #'
 #'
 #' @param x raster object or input path of file
-#' @param scale.factor
-#' @param threshold
+#' @param scale.factor scale factor
+#' @param threshold threshold
 #' @param path.output = NULL
 #' @param do.sieve = TRUE
 #' @param sieve.mode mode of cell-neighborhood,  Neumann [0]: the four horizontally and vertically neighboured cells; Moore [1]: all eight adjacent cells. Default: "0"

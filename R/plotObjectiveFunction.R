@@ -1,9 +1,9 @@
 #' Plot result of Objective Function
 #'
-#' This function plots the result of  \code{\link{ObjectiveFunction}} function using
+#' This function plots the result of  \code{Lslide::ObjectiveFunction} function using
 #' \code{\link[ggplot2]{ggplot}}
 #'
-#' @param x result of function \code{\link{ObjectiveFunction}}
+#' @param x result of function \code{Lslide::ObjectiveFunction}
 #' @param legend.position position of legend in plot. Default: "bottom"
 #' @param title plot title. Default: ""
 #' @param selected.Scale scale parameter for highlighting. Default: NULL

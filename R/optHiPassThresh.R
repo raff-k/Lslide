@@ -13,7 +13,7 @@
 #' @param cores number of cores for parallel processing. Default: 1 (sequential)
 #' @param NoData = -99999
 #' @param path.runfile full path for run file with .txt as ending. Default: NULL
-#' @param env.rsaga
+#' @param env.rsaga SAGA GIS environment
 #' @param quiet no outputs in console. Default: TRUE
 #' @return
 #'  data.frame with clssification measurements ().

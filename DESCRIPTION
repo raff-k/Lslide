@@ -16,6 +16,7 @@ Imports:
          ggplot2 (>= 2.2.1),
          maptools (>= 0.8.40),
          igraph(>= 1.1.2), 
+         magrittr (>= 1.5), 
          mclust (>= 5.2.2),
          parallel (>= 3.5.0), 
          raster (>= 2.5.8),
@@ -40,4 +41,4 @@ Remotes:
           Bioconductor-mirror/EBImage
 License: GPL (>= 2)
 Encoding: UTF-8
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1

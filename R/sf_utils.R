@@ -4,6 +4,7 @@
 #'
 #' @param x object of class sf
 #' @param y object of class sf
+#' @importFrom magrittr "%>%"
 #' @return
 #' Geometry of class sfc
 #'
@@ -52,6 +53,7 @@ st_erase = function(x, y, precision = 0, do.subset = TRUE)
 #' @param attributes attributes inherited to intersection result. [0] polygon, [1] line, [2] line and polygon. Default: "1"
 #' @param env.rsaga SAGA GIS environemnt. Default: RSAGA::rsaga.env()
 #' @param check.geom If set to TRUE then geometry is checked with sf::st_is_valid(). If there are invalid geometries, geometries are repaired using lwgeom::st_make_valid(). Default: TRUE
+#' @importFrom magrittr "%>%"
 #' @return
 #' Geometry of class sfc
 #'
@@ -116,6 +118,7 @@ rsaga_erase = function(x, y, method = "1", split = "0", attributes = "1", env.rs
 #'
 #' @param x object of class sf
 #' @param extent vector containing numeric values, in the following order: xmin, xmax, ymax, ymin
+#' @importFrom magrittr "%>%"
 #' @return
 #' Geometry of class sfc
 #'
@@ -169,6 +172,7 @@ st_plot = function(x) plot(sf::st_geometry(x))
 #' @param x object of class sf
 #' @param by field for dissolving. Default: NULL
 #' @param ... Optional: field statistcs
+#' @importFrom magrittr "%>%"
 #' @return
 #' dissolved geometry of class sf
 #'
@@ -188,6 +192,7 @@ st_dissolve = function(x, by = NULL, ...) x %>% dplyr::group_by(.dots = by) %>% 
 #'
 #' @param x list of objects of class sf
 #' @param geom vector containing the geometries of x. Order must be the same as in list.
+#' @importFrom magrittr "%>%"
 #' @return
 #' sf object with combined data.frames
 #'
@@ -207,6 +212,7 @@ st_rbind = function(x, geom) x %>% lapply(X = ., FUN = function(x) sf::st_set_ge
 #' This function calculates the perimeter of a polygon.
 #'
 #' @param x object of class sf
+#' @importFrom magrittr "%>%"
 #' @return
 #' Vector with perimeter values
 #'
@@ -225,6 +231,7 @@ st_perimeter = function(x, ...) suppressWarnings(x %>% sf::st_cast(x = ., to = "
 #' This function calculates the shape index of a polygon.
 #'
 #' @param x object of class sf
+#' @importFrom magrittr "%>%"
 #' @return
 #' Vector with shape index and interior edge ratio values
 #'
@@ -262,6 +269,7 @@ st_shape_indices = function(x){
 #' @param use.saga use SAGA GIS for erase process. Default: FALSE
 #' @param return.geom If set to TRUE, intermediate geometries are returned as well. Default: FALSE
 #' @param quiet show output on console. Default: FALSE
+#' @importFrom magrittr "%>%"
 #' @return
 #' Vector with integration index (completly integrated: 2/3 < R < 1; good integrated: 1/3 < R < 2/3; low integrated: 0 < R < 1/3; not integrated: 0)
 #'
@@ -427,6 +435,7 @@ st_integration_index = function(geom.old, geom.new, geom.boundary = NULL, tol = 
 #' @param do.preProcessing If TRUE (default), the input of geom.frag is, first, dissolved to single part feature, and second, splitted to multi-parts. By this step it is assured, that polygon connected to each other are summarized
 #' @param return.geom If set to TRUE, intermediate geometries are returned as well. Default: FALSE
 #' @param quiet If set to FALSE, actual state is printed to console. Default: TRUE.
+#' @importFrom magrittr "%>%"
 #' @return
 #' Vector with shape index and interior edge ratio values
 #'
@@ -469,8 +478,8 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
   if(!is.null(geom.boundary)){ geom.boundary$ID_BOUNDS <- 1:nrow(geom.boundary) } # ## add unique IDs
 
   ## add Area in m_sq
-  geom.frag$A_FRAG <- sf::st_area(geom.frag) %>% as.numeric() %>% "/" (conv) # units::drop_units(.)
-  if(!is.null(geom.boundary)){ geom.boundary$A_BOUNDS <- sf::st_area(geom.boundary) %>% as.numeric() %>% "/" (conv)}
+  geom.frag$A_FRAG <- sf::st_area(geom.frag) %>% (function(x, conv = conv) as.numeric(x)/conv) # as.numeric() %>% "/" (conv) # units::drop_units(.)
+  if(!is.null(geom.boundary)){ geom.boundary$A_BOUNDS <- sf::st_area(geom.boundary) %>% (function(x, conv = conv) as.numeric(x)/conv)}
 
 
   ## subset data
@@ -486,7 +495,7 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
     if(!quiet) cat("... intersection to boundary \n")
     inter <- suppressWarnings(sf::st_intersection(x = geom.boundary, y = geom.frag))
     inter <- suppressWarnings(inter %>% st_cast(., "MULTIPOLYGON") %>% sf::st_cast(., "POLYGON")) # cast is necessairy to split multi-polygons
-    inter$A_FRAG_INTER <- sf::st_area(inter) %>% as.numeric() %>% "/" (conv) # overwrite area of fragments, # units::drop_units(.)
+    inter$A_FRAG_INTER <- sf::st_area(inter) %>% (function(x, conv = conv) as.numeric(x)/conv) # overwrite area of fragments, # units::drop_units(.)
 
     ## calculation of mesh indices
     df.inter <- sf::st_set_geometry(x = inter, value = NULL) %>% data.table::as.data.table(.)
@@ -587,6 +596,7 @@ st_mesh = function(geom.frag, geom.boundary = NULL, total.area = NULL, conv = 10
 #' @param env.rsaga environment of SAGA GIS. If st_erase fails then SAGA GIS erase is used. Default: NULL, but in function call if not set: RSAGA::rsaga.env()
 #' @param use.saga use SAGA GIS for erase process. Default: FALSE
 #' @param quiet If set to FALSE, actual state is printed to console. Default: TRUE.
+#' @importFrom magrittr "%>%"
 #' @return
 #'  strong urban sprawl: 40-50%, less urban sprawl: 80-90%
 #'
@@ -771,7 +781,7 @@ st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100),
 
   erase.final <- erase.final %>% sf::st_collection_extract(x = ., type = "LINESTRING")
 
-  erase.final$L <- sf::st_length(x = erase.final) %>% as.numeric(.) %>% "/" (1000) # convert from meter to km!
+  erase.final$L <- sf::st_length(x = erase.final) %>% (function(x) as.numeric(x)/1000) # as.numeric(.) %>% "/" (1000) # convert from meter to km!
   erase.final$L_trans <- ifelse(erase.final$Type == 2, erase.final$L, trans(x = erase.final$L, trans.k = trans.k))
 
 
@@ -815,6 +825,7 @@ st_urban_sprawl = function(geom.urban, geom.boundary = NULL, dist = c(100, 100),
 #' This function creates a fishnet, consisting of multilines in x and y direction.
 #'
 #' @param x object of class sf
+#' @importFrom magrittr "%>%"
 #' @return
 #' Geometry of class sfc
 #'

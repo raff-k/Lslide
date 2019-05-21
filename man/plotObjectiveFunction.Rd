@@ -11,7 +11,7 @@ plotObjectiveFunction(x, legend.position = "bottom", title = "",
   selected.Scale.shape = 1, selected.Scale.stroke = 1.2, ...)
 }
 \arguments{
-\item{x}{result of function \code{\link{ObjectiveFunction}}}
+\item{x}{result of function \code{Lslide::ObjectiveFunction}}
 
 \item{legend.position}{position of legend in plot. Default: "bottom"}
 
@@ -43,7 +43,7 @@ plotObjectiveFunction(x, legend.position = "bottom", title = "",
 \code{\link[ggplot2]{ggplot}} object
 }
 \description{
-This function plots the result of  \code{\link{ObjectiveFunction}} function using
+This function plots the result of  \code{Lslide::ObjectiveFunction} function using
 \code{\link[ggplot2]{ggplot}}
 }
 \keyword{Function,}

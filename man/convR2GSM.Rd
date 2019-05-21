@@ -15,7 +15,7 @@ convR2GSM(r, NA.val.in = 0)
 \linkS4class{data.table} containing object-based textural features
 }
 \description{
-Conversion of raster layer to gray-scale image
+This function convert a \linkS4class{RasterLayer} input to a gray-scale image, so that it can be used within EBImage functions.
 }
 \note{
 \itemize{

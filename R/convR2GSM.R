@@ -1,6 +1,6 @@
-#' Conversion of raster layer to gray-scale image
+#' @title Conversion of raster layer to gray-scale image
 #'
-#' This function convert a \linkS4class{RasterLayer} input to a gray-scale image, so that it can be used within \code{\link[EBImage] functions.
+#' @description This function convert a \linkS4class{RasterLayer} input to a gray-scale image, so that it can be used within EBImage functions.
 #'
 #' @param r \linkS4class{RasterLayer} to be converted either to an image or a matrix
 #' @param NA.val.in replace value for no data (NA) in \emph{r}. Default: 0

@@ -1,7 +1,7 @@
-#' Contrast-Filter-Segmentation
+#' @title Contrast-Filter-Segmentation
 #'
-#' This function performs a contrast filter segmentation on an input \linkS4class{RasterLayer}.
-#' In the firest stept the raster is converted to a gray-scale matrix, followed by filter functions of the \code{\link[EBImage] package.
+#' @description This function performs a contrast filter segmentation on an input \linkS4class{RasterLayer}.
+#' In the firest stept the raster is converted to a gray-scale matrix, followed by filter functions of the EBImage package.
 #' Then, the filtering is applied as mask on the segmentation-input. Afterwards, a segmentation is performed
 #' using GRASS GIS region growing. Finally, the segments are transformed to \linkS4class{SpatialPolygonsDataFrame}
 #' and returned as function output.

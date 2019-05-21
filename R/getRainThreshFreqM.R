@@ -1,6 +1,6 @@
-#' Get rain event of a landslide
+#' @title Get rain event of a landslide
 #'
-#' This function calcuates different precipitation characteristics for a specific time-series:
+#' @description This function calcuates different precipitation characteristics for a specific time-series:
 #' total precipitation, number of rainfall events, weighted mean intensitiy of rainfall events (normalized by MAP, RD or RDN),
 #' cumulative critical event rainfall (normalized by MAP, RD or RDN), maximum rainfall during critical rainfall event,
 #' duration of critical rainfall event, critical rainfall intensitiy (normalized by MAP, RD or RDN), rainfall at day of failure (start date),
@@ -9,16 +9,15 @@
 #' @param Re vector containing the rain event variable, e.g. cumulated event rainfall (in mm) or intensity (mm/h)
 #' @param D vector containing the duration of the rainfall events
 #' @param method method to compute threshold. Either "LS" for least square, or "NLS" for non-linear least squares Method. Default: "nls"
-#' @param prob.threshold exceedance probability level. Default: 0.05 (5 %)
+#' @param prob.threshold exceedance probability level. Default: 0.05 (5 [percent] )
 #' @param log10.transform log-transformation of input vectors Re and/or D. Default: TRUE
 #' @param bootstrapping If TRUE bootstrapping is performed. Default: TRUE
 #' @param R the number of bootstrap replicates, see boot::boot() for more information. Default: 1000
 #' @param seed replicable bootstrapping. Default: 123
 #' @param use.integralError for estimating x of prob.threshold, the entire function is integrated first to estimate the bias: (1 - INTEGRAL)/2. Default. TRUE
 #' @param ... more options passed to boot:boot() function, i.e. parallel for paralell processing
-#' @return
-#' vector containing rainfall metrics (see description). If return.DataFrame is TRUE a data.frame is returned containing similar
-#' rain metrics for all rain events.
+#'
+#' @return vector containing rainfall metrics (see description). If return.DataFrame is TRUE a data.frame is returned containing similar rain metrics for all rain events.
 #'
 #'
 #' @note
@@ -29,15 +28,12 @@
 #'   \item Guzzetti, F., Peruccacci, S., Rossi, M., & Stark, C. P. (2007). Rainfall thresholds for the initiation of landslides in central and southern Europe. Meteorology and atmospheric physics, 98(3-4), 239-267.
 #' }
 #'
-#'
 #' @keywords rainfall tresholds, rainfall event, landslide, automatic appraoch
 #'
 #'
 #' @export
-library(MASS)
 getRainThreshFreqM <- function(Re, D, method = "NLS", prob.threshold = 0.05, log10.transform = FALSE,
-                               bootstrapping = TRUE, R = 1000, seed = 123, use.integralError = TRUE, ...)
-{
+                               bootstrapping = TRUE, R = 1000, seed = 123, use.integralError = TRUE, ...){
 
   ## log transformation of input vectors
     if(log10.transform)
@@ -48,15 +44,12 @@ getRainThreshFreqM <- function(Re, D, method = "NLS", prob.threshold = 0.05, log
 
 
 
-  if(method == "LS")
-  {
+  if(method == "LS"){
     ## Least Squares Method (LS)
     # ReD.LS <- stats::lsfit(y = Re, x = D) # delivers same result as lm()
-    if(bootstrapping)
-    {
+    if(bootstrapping){
       # ... create bootstrap function
-      boot.LS <- function(formula, data, indices)
-      {
+      boot.LS <- function(formula, data, indices){
         # subset data
         data <- data[indices,]
 

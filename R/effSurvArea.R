@@ -1,10 +1,10 @@
-#' Calculation of effective surveyed area
+#' @title Calculation of effective surveyed area
 #'
-#' This function calculate the effective surveyed area based on viewshed analysis.
+#' @description This function calculate the effective surveyed area based on viewshed analysis.
 #' A valid GRASS GIS session must be initiated before.
 #'
 #' @param elev \linkS4class{RasterLayer} containing elevation values
-#' @param pts \linkS4class{sf} containing the points from which the effective surveyed area is estimated.
+#' @param pts sf containing the points from which the effective surveyed area is estimated.
 #' @param maxdist viewshed distance to analysie. Default: 1000 m
 #' @param ID vector containing names for temporary written data. Vector length must be the same as number of input points. Default: NULL.
 #' @param do.extend extend output to extent of input elev. Default: FALSE

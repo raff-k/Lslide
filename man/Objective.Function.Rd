@@ -82,6 +82,10 @@ Objective.Function(Tool, Scale.Input.Grid,
 
 \item{HiPassFilter.input.filter}{path to load}
 
+\item{HiPassFilter.scale.factor}{scale factor of high-pass filter}
+
+\item{HiPassFilter.scale.threshold}{threshold of high-pass filter}
+
 \item{other...}{see \code{\link{segmentation}}}
 }
 \description{

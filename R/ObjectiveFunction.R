@@ -11,8 +11,8 @@
 #' @param env ...
 #' @param Grass.Segmentation.Minsize = NA,
 #' @param Grass.Segmentation.Threshold = NA
-#' @param HiPassFilter.scale.factor
-#' @param HiPassFilter.scale.threshold
+#' @param HiPassFilter.scale.factor scale factor of high-pass filter
+#' @param HiPassFilter.scale.threshold threshold of high-pass filter
 #' @param HiPassFilter.input.filter path to load
 #' @param HiPassFilter.input.segmentation path to load
 #' @param Scale.Input.Grid input grid for computing segmentation scale parameters

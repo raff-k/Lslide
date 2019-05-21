@@ -4,7 +4,7 @@
 \alias{effSurvArea}
 \title{Calculation of effective surveyed area}
 \usage{
-effSurvArea(elev, pts, maxdist = 1000, do.extend = FALSE,
+effSurvArea(elev, pts, ID = NULL, maxdist = 1000, do.extend = FALSE,
   path.save = tempdir(), path.temp = tempdir(), method = "bilinear",
   memory = 4096, NAflag = -99999, return.geom = TRUE, quiet = TRUE,
   show.output.on.console = FALSE)
@@ -12,7 +12,9 @@ effSurvArea(elev, pts, maxdist = 1000, do.extend = FALSE,
 \arguments{
 \item{elev}{\linkS4class{RasterLayer} containing elevation values}
 
-\item{pts}{\linkS4class{sf} containing the points from which the effective surveyed area is estimated.}
+\item{pts}{sf containing the points from which the effective surveyed area is estimated.}
+
+\item{ID}{vector containing names for temporary written data. Vector length must be the same as number of input points. Default: NULL.}
 
 \item{maxdist}{viewshed distance to analysie. Default: 1000 m}
 

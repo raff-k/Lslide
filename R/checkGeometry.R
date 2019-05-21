@@ -4,8 +4,8 @@
 #'
 #' @param spdf \linkS4class{SpatialPolygonsDataFrame} input
 #' @param bug.correct.rgeos correct rgeos bug, see \href{https://gis.stackexchange.com/questions/163445/r-solution-for-topologyexception-input-geom-1-is-invalid-self-intersection-er}{TopologyException} \emph{(last call: 13-04-2017)}. Default: TRUE
-#' @param bug.simpl.tol tolerance in \code{\link[rgeos]{gSimplify}}. Default: 0.00001
-#' @param bug.buf.width buffer width in \code{\link[rgeos]{gBuffer}}. Default: 0
+#' @param bug.simpl.tol tolerance in rgeos::gSimplify. Default: 0.00001
+#' @param bug.buf.width buffer width in rgeos::gBuffer. Default: 0
 #' @param quiet no outputs in console. Default: TRUE
 #'
 #' @return

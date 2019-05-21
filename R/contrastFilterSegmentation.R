@@ -1,7 +1,7 @@
-#' Contrast-Filter-Segmentation
+#' @title Contrast-Filter-Segmentation
 #'
-#' This function performs a contrast filter segmentation on an input \linkS4class{RasterLayer}.
-#' In the firest stept the raster is converted to a gray-scale matrix, followed by filter functions of the \code{\link[EBImage] package.
+#' @description This function performs a contrast filter segmentation on an input \linkS4class{RasterLayer}.
+#' In the firest stept the raster is converted to a gray-scale matrix, followed by filter functions of the EBImage package.
 #' Then, the filtering is applied as mask on the segmentation-input. Afterwards, a segmentation is performed
 #' using GRASS GIS region growing. Finally, the segments are transformed to \linkS4class{SpatialPolygonsDataFrame}
 #' and returned as function output.
@@ -51,8 +51,7 @@
 contrastFilterSegmentation <- function(input.filter, input.segmentation = input.filter, offset = 0.06, makeBrush.size = 25, makeBrush.shape = "disc", NA.val.in = 0, clump.thresh = NULL, clump.directions = 4, env.rsaga = RSAGA::rsaga.env(),
                                        CFR.buf = 1, output.path = tempdir(), writeCFRaster = FALSE, writeRaster.NAflag = -99999, freeMemory = TRUE, show.output.on.console = FALSE, quiet = TRUE, morph.Closing = TRUE, closing.size = 3, closing.shape = "box",
                                        Grass.Segmentation.Threshold = 0.24, Grass.Segmentation.Minsize = 1, Grass.Segmentation.Memory = 1024, Segments.Poly =  file.path(tempdir(), "outSegPoly.shp"),   Segments.Grid = file.path(tempdir(), "outSegGrid.sgrd"),
-                                       defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"), load.output = FALSE, fill.holes = FALSE, ...)
-{
+                                       defaultGrass = c("C:/OSGeo4W64", "grass-7.2.2", "OSGeo4W64"), load.output = FALSE, fill.holes = FALSE, ...){
 
   # browser()
 

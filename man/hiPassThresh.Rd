@@ -14,6 +14,10 @@ hiPassThresh(x, scale.factor, threshold, path.output = NULL,
 \arguments{
 \item{x}{raster object or input path of file}
 
+\item{scale.factor}{scale factor}
+
+\item{threshold}{threshold}
+
 \item{path.output}{= NULL}
 
 \item{do.sieve}{= TRUE}
