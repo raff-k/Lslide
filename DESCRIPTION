@@ -37,8 +37,8 @@ Suggests:
           ggplot2,
           spdep
 Remotes:
-          bioc::BiocInstaller,
-          bioc::EBImage
+          bioc::release/BiocInstaller,
+          bioc::release/EBImage
 License: GPL (>= 2)
 Encoding: UTF-8
 RoxygenNote: 6.1.1
