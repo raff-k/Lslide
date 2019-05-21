@@ -129,25 +129,27 @@ effSurvArea <- function(elev, pts, ID = NULL, maxdist = 1000, do.extend = FALSE,
   if(cores > 1)
   {
     cat("... init parallelisation mode \n")
-    future::plan(list(future::tweak(future::multiprocess, workers = cores)))
+    cat("... ... is NOT supported at the moment! \n")
+    future::plan(sequential)
+    # future::plan(list(future::tweak(future::multiprocess, workers = cores)))
 
-    cat("... init mapsets for every point observation \n")
-    list.mapsets <- lapply(X = 1:nrow(pts), function(i, region){
-
-      mapset.i <- paste0("tmp_mapset_", i)
-
-      rgrass7::execGRASS("g.mapset", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        mapset = mapset.i))
-
-      rgrass7::execGRASS("g.region", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-        region = region))
-
-      return(mapset.i)
-    }, region = "saved_region")
-
-    # change back to PERMANENT mapset
-    rgrass7::execGRASS("g.mapset", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
-      mapset = "PERMANENT"))
+    # cat("... init mapsets for every point observation \n")
+    # list.mapsets <- lapply(X = 1:nrow(pts), function(i, region){
+    #
+    #   mapset.i <- paste0("tmp_mapset_", i)
+    #
+    #   rgrass7::execGRASS("g.mapset", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+    #     mapset = mapset.i))
+    #
+    #   rgrass7::execGRASS("g.region", flags = c("overwrite", "quiet"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+    #     region = region))
+    #
+    #   return(mapset.i)
+    # }, region = "saved_region")
+    #
+    # # change back to PERMANENT mapset
+    # rgrass7::execGRASS("g.mapset", flags = c("overwrite", "quiet", "c"), Sys_show.output.on.console = show.output.on.console, parameters = list(
+    #   mapset = "PERMANENT"))
 
   } else {
     future::plan(sequential)
@@ -162,14 +164,14 @@ effSurvArea <- function(elev, pts, ID = NULL, maxdist = 1000, do.extend = FALSE,
   {
    # browser()
 
-    if(!is.null(list.mapsets))
-    {
-      mapsets.i <- list.mapsets[[i]]
-
-      # change to current mapset
-      rgrass7::execGRASS("g.mapset", flags = c("overwrite"), Sys_show.output.on.console = T, parameters = list(
-        mapset = mapset.i))
-    }
+    # if(!is.null(list.mapsets))
+    # {
+    #   mapsets.i <- list.mapsets[[i]]
+    #
+    #   # change to current mapset
+    #   rgrass7::execGRASS("g.mapset", flags = c("overwrite"), Sys_show.output.on.console = T, parameters = list(
+    #     mapset = mapset.i))
+    # }
 
 
     ## remove files in GRASS GIS session
