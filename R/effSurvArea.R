@@ -132,7 +132,7 @@ effSurvArea <- function(elev, pts, ID = NULL, maxdist = 1000, do.extend = FALSE,
     future::plan(list(future::tweak(future::multiprocess, workers = cores)))
 
     cat("... init mapsets for every point observation \n")
-    list.mapsets <- lapply(X = 1:nrow(pts), function(i){
+    list.mapsets <- lapply(X = 1:nrow(pts), function(i, region){
 
       mapset.i <- paste0("tmp_mapset_", i)
 
