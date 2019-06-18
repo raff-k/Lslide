@@ -66,7 +66,13 @@ plotObjectiveFunction <- function(x, legend.position = "bottom", title = "", sel
   {
     plotOF <- plotOF + geom_point(data =  x.melt[intersect(grep("Obj", x.melt$variable),   which(x.melt$Scale.Parameter %in% selected.Scale)),],
                         aes(x = Scale.Parameter, y = value, shape = "shape scale"), color = col.sSl, size = selected.Scale.size, stroke = selected.Scale.stroke) +
-                        scale_shape_manual(name = "", labels = selected.Scale.label, values = c("shape scale" = selected.Scale.shape))
+                        scale_shape_manual(name = "", labels = selected.Scale.label, values = c("shape scale" = selected.Scale.shape)) +
+      guides(
+        color = guide_legend(order = 1),
+        linetype = guide_legend(order = 1, ncol = 2),
+        size  = guide_legend(order = 1),
+        shape = guide_legend(order = 2)
+      )
   }
 
 
