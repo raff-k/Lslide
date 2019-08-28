@@ -6,6 +6,8 @@
 #' @param x result of function \code{Lslide::ObjectiveFunction}
 #' @param legend.position position of legend in plot. Default: "bottom"
 #' @param title plot title. Default: ""
+#' @param y.axis.label.left label of left y-axis. Default: \code{"objective function [indices]"}
+#' @param y.axis.label.right label of right y-axis. Default: \code{"normalized values [indices]"}
 #' @param selected.Scale scale parameter for highlighting. Default: NULL
 #' @param selected.Scale.label legend label. Default: "selected scale"
 #' @param col.OF line color for objective function. Default: "#DC143C"
@@ -27,7 +29,7 @@
 #'
 #'
 #' @export
-plotObjectiveFunction <- function(x, legend.position = "bottom", title = "", selected.Scale = NULL, selected.Scale.label = "selected scale",
+plotObjectiveFunction <- function(x, legend.position = "bottom", title = "", y.axis.label.left = "objective function [indices]", y.axis.label.right = "normalized values [indices]", selected.Scale = NULL, selected.Scale.label = "selected scale",
                                   col.OF = "#DC143C", col.PF = "black", col.nIV = "#6495ED", col.nMI = "#8B4513", col.sSl = "gold",
                                   selected.Scale.size = 4, selected.Scale.shape = 1, selected.Scale.stroke = 1.2, ...)
 {
@@ -51,9 +53,9 @@ plotObjectiveFunction <- function(x, legend.position = "bottom", title = "", sel
     scale_linetype_manual(values = c(3, 3, 1, 2), name = "", labels = labels) +
     scale_colour_manual(values = c(col.nIV, col.nMI, col.OF, col.PF), name = "", labels = labels) +
     scale_size_manual(values = c(0.9, 0.9, 1, 1), name = "", labels = labels) +
-    scale_y_continuous(sec.axis = sec_axis(trans = y ~ I(. - minVal)/(maxVal-minVal), name = "normalized parameters [indices]")) +
+    scale_y_continuous(sec.axis = sec_axis(trans = y ~ I(. - minVal)/(maxVal-minVal), name = y.axis.label.right)) +
     scale_x_continuous(breaks = unique(x$Scale.Parameter)) +
-    labs(y = "objective function [indices]", x = "segmentation scale", title = title) +
+    labs(y = y.axis.label.left, x = "segmentation scale", title = title) +
     theme_bw() +
     theme(legend.position = legend.position, legend.direction = "horizontal", legend.text = element_text(face = "bold", size = 11),
           axis.title.y = element_text(face = "bold", size = 11, margin = margin(r = 10)), axis.title.x = element_text(face = "bold", size = 11, margin = margin(t = 10)),
