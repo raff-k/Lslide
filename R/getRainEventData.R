@@ -323,7 +323,7 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
 
           # ... calculate rainfall metrics
           cERM.sub <- calcEventRainfallMetrics(x = precip, dates = dates, list.RainEvents = S6SE, modus = "sub", RD = RD, MAP = MAP, RDN = RDN)
-          names(cERM.sub) <- paste0(names(cERM.sub), "_", i)
+          names(cERM.sub) <- paste0(names(cERM.sub), "_", stringr::str_pad(string = i, width = 2, side = "left", pad = "0")) # naming
 
           return(cERM.sub)
 
@@ -397,7 +397,7 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
 
 
         # ... get start indices of sub-events
-        startSub <- grep(pattern = "sRE_sum_1.", x = names(res))[1]
+        startSub <- grep(pattern = "sRE_sum_01.", x = names(res))[1]
 
 
         # ... create main data frame
@@ -415,11 +415,16 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
 
         # ... create sub data frame
         # ... ... names
-        res.df.sub.ColName <- names(res)[startSub:length(res)] # get names
-        res.df.sub.ColName <- unique(gsub(pattern = "^s|_[[:digit:]].*", replacement = "", x = res.df.sub.ColName)) # adapt colnames
+        res.df.sub.ColName.all <- names(res)[startSub:length(res)] # get names
+        res.df.sub.ColName <- unique(gsub(pattern = "^s|_[[:digit:]].*", replacement = "", x = res.df.sub.ColName.all)) # adapt colnames
+
+        res.df.sub.ColName.order <- lapply(X = res.df.sub.ColName, FUN = function(x, all.n, startSub){
+                                return(grep(pattern = x, x = all.n) + startSub -1)
+                            }, all.n = res.df.sub.ColName.all, startSub = startSub) %>% unlist(.)
+
 
         # ... ... data.frame
-        res.df.sub <- data.frame(matrix(res[startSub:length(res)], ncol = ((startSub-1)/length(S4.RainEvents))))
+        res.df.sub <- data.frame(matrix(res[res.df.sub.ColName.order], ncol = ((startSub-1)/length(S4.RainEvents)))) # startSub:length(res)
         colnames(res.df.sub) <- res.df.sub.ColName # re-name columns
         res.df.sub$ID <- unlist(sapply(X = 1:length(extr.sRENum), FUN = function(i, x){i*100 + seq(1:extr.sRENum[i])}, x = extr.sRENum)) # get ID variables
 
@@ -449,7 +454,7 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
           names(res.df) <- substring(names(res.df), 2)
 
           ## create data frame
-          startSub <- which(names(res.df) == "RE_sum_1")
+          startSub <- which(names(res.df) == "RE_sum_01") # RE_sum_1 * changed 20-02-12
 
           res.colNames <- names(res.df)[1: (startSub-1)]
 
@@ -685,41 +690,41 @@ calcEventRainfallMetrics <- function(x, dates, list.RainEvents, modus, RD = RD, 
   {
     ## naming of variables
     names(rainEvent.nb) <- "sRE_number"
-    names(RE.sum) <-  paste0("sRE_sum_", c(1:rainEvent.nb))
-    names(RE.max) <-  paste0("sRE_max_", c(1:rainEvent.nb))
-    names(RE.dur) <-  paste0("sRE_dur_", c(1:rainEvent.nb))
+    names(RE.sum) <-  paste0("sRE_sum_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
+    names(RE.max) <-  paste0("sRE_max_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
+    names(RE.dur) <-  paste0("sRE_dur_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
 
 
     ## rainfall intensity
     RE.ID <- RE.sum/RE.dur
-    names(RE.ID) <- paste0("sRE_Intensity_", c(1:rainEvent.nb))
+    names(RE.ID) <- paste0("sRE_Intensity_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
 
     # normalizations c(rainEvent.nb, RE.sum, RE.max, RE.dur, RE.ID)
     if(!is.null(MAP))
     {
       RE.sum.MAP <- RE.sum/MAP
-      names(RE.sum.MAP) <- paste0("sRE_sum_MAP_", c(1:rainEvent.nb))
+      names(RE.sum.MAP) <- paste0("sRE_sum_MAP_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
 
       RE.ID.MAP <- RE.sum.MAP/RE.dur
-      names(RE.ID.MAP) <- paste0("sRE_Intensity_MAP_", c(1:rainEvent.nb))
+      names(RE.ID.MAP) <- paste0("sRE_Intensity_MAP_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
     }
 
     if(!is.null(RD))
     {
       RE.sum.RD <- RE.sum/RD
-      names(RE.sum.RD) <- paste0("sRE_sum_RN_", c(1:rainEvent.nb))
+      names(RE.sum.RD) <- paste0("sRE_sum_RN_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
 
       RE.ID.RD <- RE.sum.RD/RE.dur
-      names(RE.ID.RD) <- paste0("sRE_Intensity_RD_", c(1:rainEvent.nb))
+      names(RE.ID.RD) <- paste0("sRE_Intensity_RD_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
     }
 
     if(!is.null(MAP) & !is.null(RD))
     {
       RE.sum.RDN <- RE.sum/RDN
-      names(RE.sum.RDN) <- paste0("sRE_sum_RND_", c(1:rainEvent.nb))
+      names(RE.sum.RDN) <- paste0("sRE_sum_RND_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0")) # c(1:rainEvent.nb))
 
       RE.ID.RDN <- RE.sum.RDN/RE.dur
-      names(RE.ID.RDN) <- paste0("sRE_Intensity_RDN_", c(1:rainEvent.nb))
+      names(RE.ID.RDN) <- paste0("sRE_Intensity_RDN_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
     }
 
 
@@ -737,10 +742,10 @@ calcEventRainfallMetrics <- function(x, dates, list.RainEvents, modus, RD = RD, 
     ## get range of rain events
     # RE.range <- sapply(X = list.RainEvents, FUN = function(X) { paste0(range(x,  na.rm = TRUE), collapse = ":")})
     RE.range.start <- sapply(X = list.RainEvents, FUN = max, na.rm = TRUE)
-    names(RE.range.start ) <- paste0("sRE_range_start_", c(1:rainEvent.nb))
+    names(RE.range.start ) <- paste0("sRE_range_start_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
 
     RE.range.end <- sapply(X = list.RainEvents, FUN = min, na.rm = TRUE)
-    names(RE.range.end) <- paste0("sRE_range_end_", c(1:rainEvent.nb))
+    names(RE.range.end) <- paste0("sRE_range_end_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
 
 
     ## get dates out of range of rain event
@@ -748,11 +753,11 @@ calcEventRainfallMetrics <- function(x, dates, list.RainEvents, modus, RD = RD, 
     {
       RE.date.start <- as.numeric(gsub("-|[[:space:]]", "", format(dates[[1]][RE.range.start], "%Y-%m-%d-%H")))
       # RE.date.start <- as.numeric(gsub("-|[[:space:]]", "", substring(dates[[1]][RE.range.start], 1, 13)))
-      names(RE.date.start) <- paste0("sRE_date_start_", c(1:rainEvent.nb))
+      names(RE.date.start) <- paste0("sRE_date_start_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
 
       RE.date.end <- as.numeric(gsub("-|[[:space:]]", "", format(dates[[1]][RE.range.end], "%Y-%m-%d-%H")))
       # RE.date.end <- as.numeric(gsub("-|[[:space:]]", "", substring(dates[[1]][RE.range.end], 1, 13)))
-      names(RE.date.end) <- paste0("sRE_date_end_", c(1:rainEvent.nb))
+      names(RE.date.end) <- paste0("sRE_date_end_", stringr::str_pad(string = c(1:rainEvent.nb), width = 2, side = "left", pad = "0"))
     }
 
   } # end of sub rainfall metrics
