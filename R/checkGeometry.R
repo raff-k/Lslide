@@ -19,7 +19,7 @@
 checkGeometry <- function(spdf, bug.correct.rgeos = TRUE, bug.simpl.tol = 0.00001, bug.buf.width = 0, quiet = TRUE)
 {
   # get report
-  report <- cleangeo::clgeo_CollectionReport(spdf)
+  report <- cleangeo::clgeo_CollectionReport(spdf) # correct geometry
 
   if(bug.correct.rgeos == TRUE)
   {
