@@ -62,7 +62,7 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
 
 
     # ... defining linear function in logit scale!
-    funct <- function(x, a, gamma){return((a + gamma * x))}
+    funct <- function(x, alpha, gamma){return((alpha + gamma * x))}
 
     m.ReD <- stats::lm(Re ~ D)
     m.ReD.fit <- m.ReD$fitted.values
@@ -87,7 +87,7 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
   if(method == "NLS") {
 
    # ... defining non-linear function
-    funct <- function(x, t, a, gamma){return((t + a * (x^gamma)))}
+    funct <- function(x, t, alpha, gamma){return((t + alpha * (x^gamma)))}
 
     # ... optimizer function
     opt.NLS <- function(par, x, y)
@@ -238,7 +238,7 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
         gamma <- boot.result$gamma50
 
         # ... fitting median model and get residuals
-        m.ReD.fit <- powerLawFunct(x = D, t = ReD.NLS.boot.conf[2, 1], a = ReD.NLS.boot.conf[2, 2], gamma = ReD.NLS.boot.conf[2, 3])
+        m.ReD.fit <- funct(x = D, alpha = ReD.NLS.boot.conf[2, 1], gamma = ReD.NLS.boot.conf[2, 2], t = ReD.NLS.boot.conf[2, 3] )
         m.ReD.Res <- Re - m.ReD.fit
       }
 
@@ -267,7 +267,7 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
   if(method == "LS")
   {
     alpha <- alpha - sigma.coef*m.PDF.sigma # ... sigma.coef ist factor for exceedance threshold
-    threshold.fit <- funct(x = D, a = alpha, gamma = gamma)
+    threshold.fit <- funct(x = D, alpha = alpha, gamma = gamma)
 
     if(bootstrapping)
     {
@@ -291,7 +291,7 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
   if(method == "NLS")
   {
     t <- t - sigma.coef*m.PDF.sigma # ... sigma.coef ist factor for exceedance threshold
-    threshold.fit <- funct(x = D, t = t, a = alpha, gamma = gamma)
+    threshold.fit <- funct(x = D, t = t, alpha = alpha, gamma = gamma)
 
     if(bootstrapping)
     {
