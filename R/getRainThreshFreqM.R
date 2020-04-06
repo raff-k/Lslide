@@ -33,9 +33,9 @@
 #'
 #'
 #' @export
-getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 0.05, log10.transform = FALSE,
-                               bootstrapping = TRUE, R = 1000, use.boot_median = FALSE,
-                               nls.bounds = list(lower = c(0, 0, 0), upper = c(500, 100, 10)), seed = 123, cores = 1){
+getRainThreshFreqM <- function(Re, D, method = c("LM", "QR", "NLS"), prob.threshold = 0.05, log10.transform = FALSE,
+                               bootstrapping = TRUE, R = 1000, use.boot_median = FALSE, nls.pw = 10, nls.tw = 10, nls.method = c("tw", "pw"),
+                               nls.bounds = list(lower = c(t = 0, alpha = 0, gamma = 0), upper = c(t = 500, alpha = 100, gamma = 10)), seed = 123, cores = 1){
 
   # get start time of process
   process.time.start <- proc.time()
@@ -58,13 +58,16 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
 
 
   ## Least Squares Method (LS) ---------------------------
-  if(method == "LS"){
+  if(method == "LS" | method == "QR"){
 
+    # browser()
 
     # ... defining linear function in logit scale!
     funct <- function(x, alpha, gamma){return((alpha + gamma * x))}
 
-    m.ReD <- stats::lm(Re ~ D)
+    if(method == "LS"){ m.ReD <- stats::lm(Re ~ D) }
+    if(method == "QR"){ m.ReD <- quantreg::rq(Re ~ D, tau = prob.threshold) }
+
     m.ReD.fit <- m.ReD$fitted.values
     m.ReD.Res <- m.ReD$residuals
 
@@ -89,6 +92,73 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
    # ... defining non-linear function
     funct <- function(x, t, alpha, gamma){return((t + alpha * (x^gamma)))}
 
+
+    # browser()
+
+    # ... why not directly kernel smoother?
+    # moving window to find DE-pairs belonging to the xth percentiles
+    findReDPairs <- function(Re, D, nls.method, nls.pw, nls.tw, prob.threshold){
+
+     # browser()
+
+      item.order <- order(D, decreasing = FALSE)
+      Re.ordered <- Re[item.order]
+      D.ordered <- D[item.order]
+      names(Re.ordered) <- D.ordered
+
+      if(nls.method == "tw")
+      {
+        ReD.cat <- D.ordered %>% cut(x = ., breaks = seq(min(D.ordered)-1, max(D.ordered)+nls.tw, nls.tw))
+        ReD.cat.unique <- ReD.cat %>% unique(.) %>% na.omit(.)
+
+        df.ReD <- data.frame(Re = Re.ordered,
+                             D = D.ordered,
+                             Cat = ReD.cat) %>% dplyr::distinct(.)
+
+        ReD.Pairs <- zoo::rollapply(data = 1:length(ReD.cat.unique), width = 2, align = "left", fill = NA, FUN = function(x, df, Cat, prob.threshold){
+          # browser()
+          Cat.i <- Cat[x]
+          df.i <- df %>% dplyr::filter(Cat %in% Cat.i)
+          x.quantile <- df.i %>% dplyr::pull(Re) %>% {quantile(x = ., probs = prob.threshold, na.rm = TRUE)[[1]]}
+          D.x <- df.i %>% dplyr::pull(D) %>% mean(., na.rm = TRUE)
+          names(x.quantile) <- D.x
+          return(x.quantile)
+        }, df = df.ReD, Cat = ReD.cat.unique, prob.threshold = prob.threshold)
+
+      }
+
+      # ReD.Pairs <- zoo::rollapply(data = Re.ordered, width = nls.mw, FUN = function(x, prob.threshold){
+      #                       # browser()
+      #                       x.quantile <- quantile(x = x, probs = prob.threshold, na.rm = TRUE)[[1]]
+      #                       x.nearestIndex <- Rfast::dista(xnew = x.quantile, x = x, index = TRUE, k = 1)[1,1]
+      #                       return(x[x.nearestIndex])
+      #                     }, prob.threshold = prob.threshold)
+
+      # runquantile(x = Re.ordered, k = nls.mw, probs = prob.threshold, type=7, endrule = c("NA"))
+
+      if(nls.method == "pw")
+      {
+
+        ReD.Pairs <- zoo::rollapply(data = Re.ordered, width = nls.pw, align = "left", fill = NA, FUN = function(x, prob.threshold){
+                              x.quantile <- quantile(x = x, probs = prob.threshold, na.rm = TRUE)[[1]]
+                              # x.nearestIndex <- Rfast::dista(xnew = x.quantile, x = x, index = TRUE, k = 1)[1,1]
+                              # return(x[x.nearestIndex]) # return index next to quantile
+                              D.x <- x %>% names(.) %>% as.numeric(.) %>% mean(., na.rm = TRUE)
+                              names(x.quantile) <- D.x
+                              return(x.quantile)
+                            }, prob.threshold = prob.threshold)
+      }
+
+      df.Pairs <- data.frame(Re = unname(ReD.Pairs),
+                             D = as.numeric(names(ReD.Pairs))) %>% dplyr::distinct(.) %>% dplyr::filter(complete.cases(.))
+
+      # df.Pairs <- df.Pairs %>% dplyr::mutate(loess = stats::loess(Re~D, family = "symmetric", data = .)$fitted)
+
+
+      return(df.Pairs)
+    } # end of findReDPairs
+
+
     # ... optimizer function
     opt.NLS <- function(par, x, y)
     {
@@ -99,8 +169,13 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
       sum((y - y.fit)^2)
     }
 
+    # find ReD-Pairs using a moving window
+    nls.Pairs <- findReDPairs(Re = Re, D = D, nls.pw = nls.pw, nls.tw = nls.tw,
+                              nls.method = nls.method, prob.threshold = prob.threshold)
+
     # ... optimize parameter
-    par.opt.NLS <- optim(x = D, y = Re, par = c(0, 1, 1),
+    par.opt.NLS <- optim(x = nls.Pairs$D, y = nls.Pairs$Re, par = c(0, 1, 1),
+    # par.opt.NLS <- optim(x = D, y = Re, par = c(0, 1, 1),
                          fn = opt.NLS,
                          method = "L-BFGS-B",
                          control = list(pgtol = 1e-8,
@@ -109,10 +184,10 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
                          upper = nls.bounds$upper)$par
 
     # get model
-    m.ReD <- stats::nls(formula = Re ~ t + a * (D^gamma),
-                        # data = data.frame(x = D, y = Re),
+    m.ReD <- stats::nls(formula = Re ~ t + alpha * (D^gamma),
+                        data = nls.Pairs,
                         start = list(t = par.opt.NLS[1],
-                                     a = par.opt.NLS[2],
+                                     alpha = par.opt.NLS[2],
                                      gamma = par.opt.NLS[3]),
                         control = list(maxiter = 500),
                         algorithm = "port",
@@ -134,10 +209,10 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
 
 
     # boot-variables
-    boot.formula <- Re ~ t + a * (D^gamma)
+    boot.formula <- Re ~ t + alpha * (D^gamma)
     boot.control <- list(maxiter = 500)
     boot.start <- list(t = par.opt.NLS[1],
-                       a = par.opt.NLS[2],
+                       alpha = par.opt.NLS[2],
                        gamma = par.opt.NLS[3])
     boot.bounds <- nls.bounds
   }
@@ -159,8 +234,8 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
 
 
     # ... create bootstrap function
-      boot.fun <- function(formula, data, method, start, control, bounds, indices){
-
+      boot.fun <- function(formula, data, method, start, control, bounds, indices, prob.threshold,
+                           nls.method, nls.pw, nls.tw, findReDPairs){
         # subset data
         data <- data[indices,]
 
@@ -175,11 +250,28 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
                        })
             }
 
+        if(method == "QR")
+        {
+          tryCatch({
+            m.boot <- quantreg::rq(formula, data, tau = prob.threshold)
+            return(coef(m.boot)) # alpha, gamma
+          }, error = function(e) {
+            return(c(NA, NA))
+          })
+        }
+
 
             if(method == "NLS")
             {
+
+              nls.pairs <- findReDPairs(data$Re, data$D,
+                                        nls.method = nls.method,
+                                        nls.pw = nls.pw,
+                                        nls.tw = nls.tw,
+                                        prob.threshold = prob.threshold)
+
               tryCatch({
-                          m.boot <-  stats::nls(formula = formula, data = data, start = start,
+                          m.boot <-  stats::nls(formula = formula, data = nls.pairs, start = start,
                                                  control = control, algorithm = "port",
                                                  lower = bounds$lower, upper = bounds$upper)
                           return(coef(m.boot)[c(2,3,1)]) # alpha, gamma, t
@@ -196,6 +288,11 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
       boot.ReD <- boot::boot(data = data.frame(Re = Re, D = D),
                              statistic = boot.fun,
                              R = R,
+                             prob.threshold = prob.threshold,
+                             nls.method = nls.method,
+                             nls.pw = nls.pw,
+                             nls.tw = nls.tw,
+                             findReDPairs = findReDPairs,
                              method = method,
                              formula = boot.formula,
                              control = boot.control,
@@ -234,11 +331,18 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
       if(use.boot_median){
 
         # set and overwrite alpha and gamma
-        alpha <- boot.T$a50
-        gamma <- boot.result$gamma50
+        alpha <- boot.result$alpha$a50
+        gamma <- boot.result$gamma$g50
 
         # ... fitting median model and get residuals
-        m.ReD.fit <- funct(x = D, alpha = ReD.NLS.boot.conf[2, 1], gamma = ReD.NLS.boot.conf[2, 2], t = ReD.NLS.boot.conf[2, 3] )
+        if(method == "NLS")
+        {
+          t <- boot.result$t$t50
+          m.ReD.fit <- funct(x = D, alpha = alpha, gamma = gamma, t = t)
+        } else {
+          m.ReD.fit <- funct(x = D, alpha = alpha, gamma = gamma)
+        }
+
         m.ReD.Res <- Re - m.ReD.fit
       }
 
@@ -264,8 +368,10 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
 
   ## get Intercept of probablilty level ----------------
 
-  if(method == "LS")
+  if(method == "LS" | method == "QR")
   {
+    if(method == "QR"){ sigma.coef <- 0 }
+
     alpha <- alpha - sigma.coef*m.PDF.sigma # ... sigma.coef ist factor for exceedance threshold
     threshold.fit <- funct(x = D, alpha = alpha, gamma = gamma)
 
@@ -290,7 +396,7 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "NLS"), prob.threshold = 
 
   if(method == "NLS")
   {
-    t <- t - sigma.coef*m.PDF.sigma # ... sigma.coef ist factor for exceedance threshold
+    # t <- t - sigma.coef*m.PDF.sigma # ... sigma.coef ist factor for exceedance threshold
     threshold.fit <- funct(x = D, t = t, alpha = alpha, gamma = gamma)
 
     if(bootstrapping)
