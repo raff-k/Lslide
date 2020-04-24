@@ -34,8 +34,10 @@
 #'
 #' @export
 getRainThreshFreqM <- function(Re, D, method = c("LM", "QR", "NLS"), prob.threshold = 0.05, log10.transform = FALSE,
-                               bootstrapping = TRUE, R = 1000, use.boot_median = FALSE, nls.pw = 10, nls.tw = 10, nls.method = c("tw", "pw"),
+                               bootstrapping = TRUE, R = 1000, use.boot_median = FALSE, use.normal = FALSE, nls.pw = 10, nls.tw = 10, nls.method = c("tw", "pw"),
                                nls.bounds = list(lower = c(t = 0, alpha = 0, gamma = 0), upper = c(t = 500, alpha = 100, gamma = 10)), seed = 123, cores = 1){
+
+  stop("Function is deprecated! Use RainSlide::thresh instead! \n")
 
   # get start time of process
   process.time.start <- proc.time()
@@ -360,10 +362,17 @@ getRainThreshFreqM <- function(Re, D, method = c("LM", "QR", "NLS"), prob.thresh
   # ReD.PDF <- stats::density(x = m.ReD.Res, bw = "nrd0", kernel = "gaussian", adjust = 1, from = -1, to = 1)
 
 
-  # Maximum likelihood fit -------------
-  m.PDF <- MASS::fitdistr(x = m.ReD.Res, densfun = "normal")
-  m.PDF.sigma <- coef(m.PDF)[2] # standard deviation from nomal approximation
-  m.PDF.sigma <- unname(m.PDF.sigma)
+  if(use.normal)
+  {
+    # Maximum likelihood fit -------------
+    m.PDF <- MASS::fitdistr(x = m.ReD.Res, densfun = "normal")
+    m.PDF.sigma <- coef(m.PDF)[2] # standard deviation from nomal approximation
+    m.PDF.sigma <- unname(m.PDF.sigma)
+  } else {
+    m.PDF <- m.ReD.Res
+    m.PDF.sigma <- sd(x = m.ReD.Res, na.rm = TRUE)
+  }
+
 
 
   ## get Intercept of probablilty level ----------------

@@ -49,6 +49,7 @@ getRainEventData <- function(x, dates = NULL, timesteps = NULL, date.of.failure 
                              RD = NULL, MAP = NULL, RDN = MAP/RD, index.month.warm.season = c(4, 10), force.limit = NULL)
 {
 
+  stop("Function is deprecated! Use RainSlide::CTRL instead! \n")
   # # # # # # # # # CHECK POTENTIAL ERRORS # # # # # # # # #
 
 

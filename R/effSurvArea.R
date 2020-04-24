@@ -36,6 +36,9 @@ effSurvArea <- function(elev, pts, ID = NULL, maxdist = 1000, do.extend = FALSE,
                         memory = 4096, NAflag = -99999, return.geom = TRUE, cores = 1, quiet = TRUE, show.output.on.console = FALSE)
 {
 
+  stop("Function is deprecated! Use RainSlide::survey instead! \n")
+
+
   # get start time of process
   process.time.start <- proc.time()
 
