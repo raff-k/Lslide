@@ -6,6 +6,23 @@ citEntry(entry="mastersthesis",
   school      = "Friedrich Schiller University Jena, Department of Geography, GIScience group",
   year         = 2017,
   url          = "https://github.com/raff-k/Lslide-thesis/raw/master/Knevels2017_AutomaticLandslideDetection_Thesis.pdf",
-  textVersion = 
+  textVersion =
   paste("Knevels, R., 2017.", "Automatic landslide detection using high-resolution LiDAR DTM data. An object-oriented approach with open-source software in Burgenland, Austria. Master's thesis, Friedrich Schiller University Jena.")
+)
+
+citEntry(entry="article",
+  author       = c(person("Raphael", "Knevels"),
+                    person("Helene", "Petschko"),
+                    person("Philip", "Leopold"),
+                    person("Alexander", "Brenning")),
+  title        = "Geographic Object-Based Image Analysis for Automated Landslide Detection Using Open Source GIS Software",
+  year         = 2019,
+  journal = "ISPRS International Journal of Geo-Information",
+  volume = 8,
+  number = 12,
+  pages = 551,
+  publisher = "MDPI",
+  doi          = "https://doi.org/10.3390/ijgi8120551",
+  textVersion =
+  paste("Knevels et al. 2019.", "Geographic Object-Based Image Analysis for Automated Landslide Detection Using Open Source GIS Software. ISPRS Int. J. Geo-Inf. 2019, 8(12), 551; https://doi.org/10.3390/ijgi8120551")
 )
